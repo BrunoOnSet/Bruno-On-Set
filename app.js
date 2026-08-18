@@ -17,7 +17,8 @@ const defaultState = {
   light: { fixture: 'cob200xs', aperture: '2.8' },
   expo: {
     values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
-    roles: { aperture: 'manual', iso: 'manual', shutter: 'manual', nd: 'manual' }
+    roles: { aperture: 'manual', iso: 'manual', shutter: 'manual', nd: 'manual' },
+    limitWarning: null
   }
 };
 
@@ -65,6 +66,7 @@ function normalizeState(){
   if(!state.media.unit) state.media.unit = 'Mb/s';
   if(!state.light.aperture) state.light.aperture = '2.8';
   if(!state.expo || !state.expo.roles) state.expo = clone(defaultState.expo);
+  if(state.expo.limitWarning === undefined) state.expo.limitWarning = null;
   state.focal = Math.max(1, Number(state.focal) || 35);
   state.dof.distanceCm = Math.max(10, Number(state.dof.distanceCm) || 250);
   for(const k of ['aperture','iso','shutter','nd']){
@@ -222,6 +224,7 @@ async function init(){
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 function ensureExpoValuesFitCamera(){
+  state.expo.limitWarning = null;
   const allowedIso = isoAllowedValues();
   if(!allowedIso.includes(String(state.expo.values.iso))){
     state.expo.values.iso = String(allowedIso[0] || currentExposureInfo().floor || 800);
@@ -385,23 +388,29 @@ function renderBody(id){
       : (autoCount === 4
           ? 'Tout est en auto : les valeurs sont figées. Passe au moins un réglage en M pour agir.'
           : 'Les réglages en A compensent automatiquement. Priorité : ISO → ND → Shutter → Diaph.');
+    const warn = state.expo.limitWarning;
+    const warnText = warn
+      ? `Correction impossible · ${expoLabel(warn.key)} limité à ${formatExpoValue(warn.key, state.expo.values[warn.key])} · ${Math.abs(warn.remaining).toFixed(1).replace('.', ',')} stop non compensé.`
+      : '';
     return `
       <div class="expo-info"><div><strong>${info.label}</strong><span>${esc(info.display)}</span></div><small>${esc(currentCamera()?.exposure?.mode || '')}</small></div>
       <div id="expoRows">${['aperture','iso','shutter','nd'].map(renderExpoRow).join('')}</div>
-      <div class="base-note" id="baseNote">${note}</div>
+      ${warn ? `<div class="expo-warning">${warnText}</div>` : `<div class="base-note" id="baseNote">${note}</div>`}
       ${appLink(id)}`;
   }
   return '';
 }
 function expoLabel(k){ return { aperture:'Diaph', iso:'ISO', shutter:'Shutter', nd:'ND' }[k]; }
 function roleShort(r){ return r === 'auto' ? 'A' : 'M'; }
+function formatExpoValue(k,v){ return k === 'aperture' ? `f/${v}` : (k === 'nd' ? `ND ${v}` : String(v)); }
 function valuesForKey(k){ return k === 'iso' ? isoAllowedValues() : ({ aperture: apertures, shutter: shutters, nd: nds }[k]); }
 function renderExpoRow(k){
   const vals = valuesForKey(k);
   const pref = k === 'aperture' ? 'f/' : (k === 'nd' ? 'ND ' : '');
   const role = state.expo.roles[k];
   const disabled = role === 'auto';
-  return `<div class="expo-row"><button class="role-pill" data-rolekey="${k}" data-role="${role}">${roleShort(role)}</button><label class="expo-control"><span>${expoLabel(k)}</span><select data-expokey="${k}" ${disabled?'disabled':''}>${optionList(vals, state.expo.values[k], pref)}</select></label></div>`;
+  const limitError = state.expo.limitWarning?.key === k;
+  return `<div class="expo-row ${limitError?'limit-error':''}"><button class="role-pill" data-rolekey="${k}" data-role="${role}">${roleShort(role)}</button><label class="expo-control"><span>${expoLabel(k)}</span><select class="${limitError?'limit-error-value':''}" data-expokey="${k}" ${disabled?'disabled':''}>${optionList(vals, state.expo.values[k], pref)}</select></label></div>`;
 }
 function bindModules(){
   document.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => {
@@ -437,6 +446,7 @@ function switchMediaUnit(nextUnit){
   renderModules();
 }
 function toggleRole(key){
+  state.expo.limitWarning = null;
   state.expo.roles[key] = state.expo.roles[key] === 'auto' ? 'manual' : 'auto';
   save();
   renderModules();
@@ -463,20 +473,39 @@ function nearestValueForStop(key, targetStop){
 }
 function applyAutoCompensation(targetTotal){
   let remaining = targetTotal - expoTotal();
+  let lastSaturatedKey = null;
+  state.expo.limitWarning = null;
+
   for(const key of autoKeys()){
     if(Math.abs(remaining) < 1e-9) break;
+    const vals = valuesForKey(key);
+    const stops = vals.map(v => exposureStop(key, v));
+    const minStop = Math.min(...stops);
+    const maxStop = Math.max(...stops);
     const currentStop = exposureStop(key, state.expo.values[key]);
     const desiredStop = currentStop + remaining;
-    const nextValue = nearestValueForStop(key, desiredStop);
+    const clippedStop = Math.max(minStop, Math.min(maxStop, desiredStop));
+    const saturated = desiredStop < minStop - 1e-9 || desiredStop > maxStop + 1e-9;
+    const nextValue = nearestValueForStop(key, clippedStop);
+
     state.expo.values[key] = String(nextValue);
     const newStop = exposureStop(key, state.expo.values[key]);
     remaining -= (newStop - currentStop);
+    if(saturated) lastSaturatedKey = key;
   }
+
+  // A small residual can come only from the discrete 1/3-stop choices.
+  // We flag red only when an automatic control has genuinely reached its limit.
+  if(Math.abs(remaining) > 0.20 && lastSaturatedKey){
+    state.expo.limitWarning = { key:lastSaturatedKey, remaining };
+  }
+  return remaining;
 }
 function expoChanged(key,newVal){
   if(state.expo.roles[key] === 'auto') return;
   const before = expoTotal();
   state.expo.values[key] = newVal;
+  state.expo.limitWarning = null;
   if(autoKeys().length){
     applyAutoCompensation(before);
   }
