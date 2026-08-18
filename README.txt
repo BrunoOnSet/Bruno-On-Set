@@ -35,3 +35,10 @@ V3 : nouvelle logique EXPO sans BASE, bascule simple M / A sur chaque ligne, com
 V4 : module LIGHT connecté à BOS_LIGHT_DB_V1_0. La liste et la photométrie proviennent désormais de data/lights.json. Le cockpit reste fixé à 100 %, 5600 K et Nu ; les lux à 1 m / 3 m utilisent la mesure exacte quand elle existe, sinon un calcul en loi inverse du carré depuis la mesure DB la plus proche, signalé par ≈.
 
 V5 : choix caméra aligné sur BOS EXPO V3.31 — boutons de marque + menu déroulant limité aux modèles de la marque, avec mémorisation du dernier modèle choisi par marque.
+
+
+V6 — BOS-PROJECTEURS-DB partagé
+- Source principale LIGHT : https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json
+- data/lights.json n'est plus la source principale : il reste uniquement comme snapshot de secours hors ligne / indisponibilité distante.
+- Le service worker utilise un mode network-first pour la DB distante afin de récupérer les mises à jour du dépôt dès qu'elles existent, puis conserve la dernière réponse distante en cache.
+- LIGHT, PLAN et Bruno OnSet peuvent ainsi pointer vers la même source commune.

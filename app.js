@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'bos-cockpit-v3';
+const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
+const LIGHT_DB_FALLBACK_URL = 'data/lights.json';
 const LAST_CAMERA_BY_BRAND_KEY = 'bos-onset-last-camera-by-brand';
 const FOCAL_PRESETS = [18,24,28,35,50,85,105,135];
 const defaultState = {
@@ -35,6 +37,7 @@ const AUTO_PRIORITY = ['iso','nd','shutter','aperture'];
 let cameras = [];
 let lightDatabase = null;
 let lightFixtures = [];
+let lightDatabaseSource = 'none';
 let state = loadState();
 normalizeState();
 
@@ -135,19 +138,45 @@ function isoAllowedValues(){
   return isos.filter(v => Number(v) >= floor);
 }
 
+async function loadSharedLightDatabase(){
+  try {
+    const remote = await fetch(LIGHT_DB_URL, { cache: 'no-store' });
+    if(!remote.ok) throw new Error(`BOS-PROJECTEURS-DB HTTP ${remote.status}`);
+    const data = await remote.json();
+    if(!data || !Array.isArray(data.fixtures)) throw new Error('BOS-PROJECTEURS-DB invalide');
+    lightDatabaseSource = 'remote';
+    return data;
+  } catch (remoteError) {
+    console.warn('BOS-PROJECTEURS-DB distant indisponible, utilisation du fallback local.', remoteError);
+    try {
+      const fallback = await fetch(LIGHT_DB_FALLBACK_URL, { cache: 'no-store' });
+      if(!fallback.ok) throw new Error(`Fallback LIGHT HTTP ${fallback.status}`);
+      const data = await fallback.json();
+      if(!data || !Array.isArray(data.fixtures)) throw new Error('Fallback LIGHT invalide');
+      lightDatabaseSource = 'fallback';
+      return data;
+    } catch (fallbackError) {
+      console.error('Aucune base projecteurs disponible.', fallbackError);
+      lightDatabaseSource = 'none';
+      return null;
+    }
+  }
+}
+
 async function init(){
   const [cameraResult, lightResult] = await Promise.allSettled([
     fetch('data/cameras.json', { cache: 'no-store' }).then(r => r.json()),
-    fetch('data/lights.json', { cache: 'no-store' }).then(r => r.json())
+    loadSharedLightDatabase()
   ]);
   if(cameraResult.status === 'fulfilled') cameras = cameraResult.value.cameras || cameraResult.value.fixtures || [];
   else cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
-  if(lightResult.status === 'fulfilled'){
+  if(lightResult.status === 'fulfilled' && lightResult.value){
     lightDatabase = lightResult.value;
     lightFixtures = (lightDatabase.fixtures || []).filter(isCockpitLightUsable);
   } else {
     lightDatabase = null;
     lightFixtures = [];
+    lightDatabaseSource = 'none';
   }
   prepareLightState();
   ensureExpoValuesFitCamera();
@@ -312,7 +341,7 @@ function renderBody(id){
         <div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div>
         <div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div>
       </div>
-      <div class="demo" id="lightSourceNote">BOS LIGHT DB · 100 % · 5600 K · Nu</div>
+      <div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>
       ${appLink(id)}`;
   }
 
@@ -483,7 +512,7 @@ function updateLight(){
   const fixture = currentLight();
   if(!fixture){
     a.textContent = '—'; b.textContent = '—'; i1.textContent = 'ISO min —'; i3.textContent = 'ISO min —';
-    if(note) note.textContent = 'BOS LIGHT DB · aucune photométrie Nu / 5600 K disponible.';
+    if(note) note.textContent = `${lightDatabaseSource === 'remote' ? 'BOS-PROJECTEURS-DB · en ligne' : (lightDatabaseSource === 'fallback' ? 'BOS-PROJECTEURS-DB · secours local' : 'Base projecteurs indisponible')} · aucune photométrie Nu / 5600 K disponible.`;
     return;
   }
   const at1 = luxAtDistance(fixture, 1);
@@ -496,7 +525,10 @@ function updateLight(){
   const calculated = [at1,at3].some(r => r && !r.exact);
   const bare = fixture?.calculator?.accessories?.bare;
   const quality = bare?.quality === 'measured' ? 'mesure constructeur' : (bare?.quality === 'single' ? 'mesure de référence' : (bare?.quality || 'donnée DB'));
-  if(note) note.textContent = `BOS LIGHT DB ${lightDatabase?.databaseVersion || 'V1.0'} · ${quality}${calculated ? ' · ≈ = calcul de distance depuis une mesure DB' : ''}`;
+  if(note){
+    const src = lightDatabaseSource === 'remote' ? 'en ligne' : (lightDatabaseSource === 'fallback' ? 'secours local' : 'indisponible');
+    note.textContent = `BOS-PROJECTEURS-DB ${lightDatabase?.databaseVersion || ''} · ${src} · ${quality}${calculated ? ' · ≈ = calcul de distance depuis une mesure DB' : ''}`;
+  }
 }
 function renderCustomize(){
   const root = document.getElementById('customizeList');

@@ -38,3 +38,5 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 .camera-select option{background:var(--panel);color:var(--text)}
 .focal-block{padding-top:12px;border-top:1px solid var(--line)}
 @media(max-width:520px){.brand-chips{gap:6px}.brand-chips button{min-height:34px;padding:0 10px;font-size:11px}.camera-select{font-size:12px}}
+
+.db-source{font-size:10px;color:var(--muted);margin-top:7px}.db-source[data-source="remote"]{color:var(--blue)}
