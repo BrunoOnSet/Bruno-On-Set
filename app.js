@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v1';
+const STORAGE_KEY = 'bos-cockpit-v3';
 const FOCAL_PRESETS = [18,24,28,35,50,85,105,135];
 const defaultState = {
   theme: 'light',
@@ -12,13 +12,12 @@ const defaultState = {
   light: { fixture: 'Amaran 200x S', aperture: '2.8' },
   expo: {
     values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
-    roles: { aperture: 'manual', iso: 'lock', shutter: 'lock', nd: 'auto' },
-    based: false
+    roles: { aperture: 'manual', iso: 'manual', shutter: 'manual', nd: 'manual' }
   }
 };
 
 const moduleMeta = {
-  expo: ['EXPO', 'Compensation instantanée'],
+  expo: ['EXPO', 'Compensation M / A'],
   frame: ['FRAME', 'Cadrage rapide'],
   dof: ['DOF', 'Profondeur de champ'],
   light: ['LIGHT', 'Lux immédiats'],
@@ -30,11 +29,12 @@ const apertures = ['1.0','1.2','1.4','1.8','2.0','2.8','4','5.6','8','11','16','
 const isos = ['100','125','160','200','250','320','400','500','640','800','1000','1250','1600','2000','2500','3200','4000','5000','6400','8000','10000','12800','16000','20000','25600','32000','40000','51200'];
 const shutters = ['1/24','1/25','1/30','1/40','1/48','1/50','1/60','1/80','1/100','1/120','1/125','1/160','1/200','1/250','1/320','1/400','1/500','1/640','1/800'];
 const nds = ['0','0.3','0.6','0.9','1.2','1.5','1.8','2.1','2.4','2.7','3.0','3.3','3.6'];
+const AUTO_PRIORITY = ['iso','nd','shutter','aperture'];
 const demoLights = {
-  'Amaran 200x S': { lux1: 34000, note: 'Donnée de démonstration V2' },
-  'Aputure 300d II': { lux1: 45000, note: 'Donnée de démonstration V2' },
-  'Nanlite Forza 300B II': { lux1: 40000, note: 'Donnée de démonstration V2' },
-  'Godox LA200Bi': { lux1: 36000, note: 'Donnée de démonstration V2' }
+  'Amaran 200x S': { lux1: 34000, note: 'Donnée de démonstration V3' },
+  'Aputure 300d II': { lux1: 45000, note: 'Donnée de démonstration V3' },
+  'Nanlite Forza 300B II': { lux1: 40000, note: 'Donnée de démonstration V3' },
+  'Godox LA200Bi': { lux1: 36000, note: 'Donnée de démonstration V3' }
 };
 
 let cameras = [];
@@ -61,8 +61,13 @@ function normalizeState(){
   }
   if(!state.media.unit) state.media.unit = 'Mb/s';
   if(!state.light.aperture) state.light.aperture = '2.8';
+  if(!state.expo || !state.expo.roles) state.expo = clone(defaultState.expo);
   state.focal = Math.max(1, Number(state.focal) || 35);
   state.dof.distanceCm = Math.max(10, Number(state.dof.distanceCm) || 250);
+  for(const k of ['aperture','iso','shutter','nd']){
+    if(!state.expo.values[k]) state.expo.values[k] = defaultState.expo.values[k];
+    if(!['manual','auto'].includes(state.expo.roles[k])) state.expo.roles[k] = 'manual';
+  }
 }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function esc(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
@@ -72,6 +77,25 @@ function fmtDuration(sec){ if(!isFinite(sec) || sec < 0) return '—'; const h=M
 function optionList(arr,val,prefix=''){ return arr.map(x => `<option value="${x}" ${String(x)===String(val)?'selected':''}>${prefix}${x}</option>`).join(''); }
 function appLink(id){ const ready = APP_LINKS[id] && APP_LINKS[id] !== '#'; return `<div class="app-link"><button class="${ready?'ready':''}" data-applink="${id}" ${ready?'':'disabled'}>${ready?'Ouvrir l’app complète ↗':'App complète · lien à connecter'}</button></div>`; }
 function bitrateToMbPerSec(){ return state.media.unit === 'Mb/s' ? Number(state.media.bitrate) : Number(state.media.bitrate) * 8; }
+function expoTotal(values=state.expo.values){ return exposureStop('aperture', values.aperture) + exposureStop('iso', values.iso) + exposureStop('shutter', values.shutter) + exposureStop('nd', values.nd); }
+function autoKeys(){ return AUTO_PRIORITY.filter(k => state.expo.roles[k] === 'auto'); }
+function allAuto(){ return autoKeys().length === 4; }
+function currentExposureInfo(){
+  const exp = currentCamera()?.exposure;
+  if(!exp) return { kind:'none', label:'ISO natif', display:'—', floor: Number(isos[0]), values:[] };
+  const values = Array.isArray(exp.baseValues) ? exp.baseValues.filter(v => Number.isFinite(Number(v))).map(Number) : [];
+  const displayValues = values.length ? values : (Number.isFinite(Number(exp.defaultValue)) ? [Number(exp.defaultValue)] : []);
+  let kind = 'native';
+  if(exp.unit === 'EI') kind = 'ei';
+  if(exp.type === 'red_metadata_iso') kind = 'reference';
+  const label = kind === 'ei' ? 'EI de base' : (kind === 'reference' ? 'ISO de réf.' : 'ISO natif');
+  const floor = values.length ? Math.min(...values) : (Number.isFinite(Number(exp.defaultValue)) ? Number(exp.defaultValue) : Number(isos[0]));
+  return { kind, label, display: displayValues.length ? displayValues.join(' / ') : '—', floor, values: displayValues };
+}
+function isoAllowedValues(){
+  const floor = currentExposureInfo().floor;
+  return isos.filter(v => Number(v) >= floor);
+}
 
 async function init(){
   try {
@@ -81,6 +105,7 @@ async function init(){
   } catch (e) {
     cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
   }
+  ensureExpoValuesFitCamera();
   setupTheme();
   renderCameraSelect();
   renderTopFocal();
@@ -89,6 +114,12 @@ async function init(){
   bindGlobal();
   renderCustomize();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+function ensureExpoValuesFitCamera(){
+  const allowedIso = isoAllowedValues();
+  if(!allowedIso.includes(String(state.expo.values.iso))){
+    state.expo.values.iso = String(allowedIso[0] || currentExposureInfo().floor || 800);
+  }
 }
 function setupTheme(){
   document.documentElement.dataset.theme = state.theme;
@@ -106,7 +137,12 @@ function renderTopFocal(){
   root.innerHTML = FOCAL_PRESETS.map(v => `<button type="button" class="preset-btn ${Number(state.focal)===v?'active':''}" data-focalpreset="${v}">${v}</button>`).join('');
 }
 function bindGlobal(){
-  document.getElementById('cameraSelect').addEventListener('change', e => { state.cameraId = e.target.value; save(); renderModules(); });
+  document.getElementById('cameraSelect').addEventListener('change', e => {
+    state.cameraId = e.target.value;
+    ensureExpoValuesFitCamera();
+    save();
+    renderModules();
+  });
   document.getElementById('focalInput').addEventListener('input', e => {
     state.focal = Math.max(1, Number(e.target.value) || 35);
     save(); renderTopFocal(); updateLive();
@@ -157,7 +193,7 @@ function renderBody(id){
 
   if(id === 'frame') return `
     <div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div>
-    <div class="warning">Aperçu relatif V2 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>
+    <div class="warning">Aperçu relatif V3 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>
     ${appLink(id)}`;
 
   if(id === 'light'){
@@ -176,21 +212,31 @@ function renderBody(id){
       ${appLink(id)}`;
   }
 
-  if(id === 'expo') return `
-    <div id="expoRows">${['aperture','iso','shutter','nd'].map(renderExpoRow).join('')}</div>
-    <div class="basebar"><button id="baseBtn" class="primary">${state.expo.based ? 'Nouvelle base' : 'BASE'}</button></div>
-    <div class="base-note" id="baseNote">${state.expo.based ? 'Base active : seul le réglage M est modifiable. A compense automatiquement.' : 'Avant BASE, touche 🔒 · M · A pour choisir 2 verrouillés · 1 manuel · 1 auto.'}</div>
-    ${appLink(id)}`;
+  if(id === 'expo'){
+    const info = currentExposureInfo();
+    const autoCount = autoKeys().length;
+    const note = autoCount === 0
+      ? 'Tout est en manuel : rien ne compense automatiquement.'
+      : (autoCount === 4
+          ? 'Tout est en auto : les valeurs sont figées. Passe au moins un réglage en M pour agir.'
+          : 'Les réglages en A compensent automatiquement. Priorité : ISO → ND → Shutter → Diaph.');
+    return `
+      <div class="expo-info"><div><strong>${info.label}</strong><span>${esc(info.display)}</span></div><small>${esc(currentCamera()?.exposure?.mode || '')}</small></div>
+      <div id="expoRows">${['aperture','iso','shutter','nd'].map(renderExpoRow).join('')}</div>
+      <div class="base-note" id="baseNote">${note}</div>
+      ${appLink(id)}`;
+  }
   return '';
 }
 function expoLabel(k){ return { aperture:'Diaph', iso:'ISO', shutter:'Shutter', nd:'ND' }[k]; }
-function roleShort(r){ return r === 'lock' ? '🔒' : (r === 'manual' ? 'M' : 'A'); }
+function roleShort(r){ return r === 'auto' ? 'A' : 'M'; }
+function valuesForKey(k){ return k === 'iso' ? isoAllowedValues() : ({ aperture: apertures, shutter: shutters, nd: nds }[k]); }
 function renderExpoRow(k){
-  const vals = { aperture: apertures, iso: isos, shutter: shutters, nd: nds }[k];
+  const vals = valuesForKey(k);
   const pref = k === 'aperture' ? 'f/' : (k === 'nd' ? 'ND ' : '');
   const role = state.expo.roles[k];
-  const disabled = state.expo.based && role !== 'manual';
-  return `<div class="expo-row"><button class="role-pill" data-rolekey="${k}" data-role="${role}" ${state.expo.based?'disabled':''}>${roleShort(role)}</button><label class="expo-control"><span>${expoLabel(k)}</span><select data-expokey="${k}" ${disabled?'disabled':''}>${optionList(vals, state.expo.values[k], pref)}</select></label></div>`;
+  const disabled = role === 'auto';
+  return `<div class="expo-row"><button class="role-pill" data-rolekey="${k}" data-role="${role}">${roleShort(role)}</button><label class="expo-control"><span>${expoLabel(k)}</span><select data-expokey="${k}" ${disabled?'disabled':''}>${optionList(vals, state.expo.values[k], pref)}</select></label></div>`;
 }
 function bindModules(){
   document.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => {
@@ -213,10 +259,8 @@ function bindModules(){
   const la = document.getElementById('lightAperture');
   if(la) la.addEventListener('change', e => { state.light.aperture = e.target.value; save(); updateLight(); });
 
-  document.querySelectorAll('[data-rolekey]').forEach(b => b.addEventListener('click', () => cycleRole(b.dataset.rolekey)));
+  document.querySelectorAll('[data-rolekey]').forEach(b => b.addEventListener('click', () => toggleRole(b.dataset.rolekey)));
   document.querySelectorAll('[data-expokey]').forEach(s => s.addEventListener('change', e => expoChanged(e.target.dataset.expokey, e.target.value)));
-  const base = document.getElementById('baseBtn');
-  if(base) base.addEventListener('click', () => { state.expo.based = !state.expo.based; save(); renderModules(); });
   document.querySelectorAll('[data-applink]').forEach(b => b.addEventListener('click', () => { const u = APP_LINKS[b.dataset.applink]; if(u && u !== '#') location.href = u; }));
 }
 function switchMediaUnit(nextUnit){
@@ -227,23 +271,8 @@ function switchMediaUnit(nextUnit){
   save();
   renderModules();
 }
-function cycleRole(key){
-  if(state.expo.based) return;
-  const roles = state.expo.roles;
-  const cur = roles[key];
-  if(cur === 'lock'){
-    const manualKey = Object.keys(roles).find(k => roles[k] === 'manual');
-    roles[key] = 'manual';
-    roles[manualKey] = 'lock';
-  } else if(cur === 'manual'){
-    const autoKey = Object.keys(roles).find(k => roles[k] === 'auto');
-    roles[key] = 'auto';
-    roles[autoKey] = 'manual';
-  } else {
-    const lockKey = Object.keys(roles).find(k => roles[k] === 'lock');
-    roles[key] = 'lock';
-    roles[lockKey] = 'auto';
-  }
+function toggleRole(key){
+  state.expo.roles[key] = state.expo.roles[key] === 'auto' ? 'manual' : 'auto';
   save();
   renderModules();
 }
@@ -257,24 +286,35 @@ function exposureStop(k,v){
   if(k === 'nd') return -Number(v) / 0.3;
   return 0;
 }
-function nearestValueForStop(k,target){
-  const vals = { aperture: apertures, iso: isos, shutter: shutters, nd: nds }[k];
-  let best = vals[0], d = Infinity;
+function nearestValueForStop(key, targetStop){
+  const vals = valuesForKey(key);
+  let best = vals[0];
+  let diff = Infinity;
   for(const v of vals){
-    const q = Math.abs(exposureStop(k,v) - target);
-    if(q < d){ d = q; best = v; }
+    const d = Math.abs(exposureStop(key, v) - targetStop);
+    if(d < diff){ diff = d; best = v; }
   }
   return best;
 }
+function applyAutoCompensation(targetTotal){
+  let remaining = targetTotal - expoTotal();
+  for(const key of autoKeys()){
+    if(Math.abs(remaining) < 1e-9) break;
+    const currentStop = exposureStop(key, state.expo.values[key]);
+    const desiredStop = currentStop + remaining;
+    const nextValue = nearestValueForStop(key, desiredStop);
+    state.expo.values[key] = String(nextValue);
+    const newStop = exposureStop(key, state.expo.values[key]);
+    remaining -= (newStop - currentStop);
+  }
+}
 function expoChanged(key,newVal){
-  const old = state.expo.values[key];
-  if(!state.expo.based){ state.expo.values[key] = newVal; save(); return; }
-  if(state.expo.roles[key] !== 'manual') return;
-  const delta = exposureStop(key,newVal) - exposureStop(key,old);
+  if(state.expo.roles[key] === 'auto') return;
+  const before = expoTotal();
   state.expo.values[key] = newVal;
-  const autoKey = Object.keys(state.expo.roles).find(k => state.expo.roles[k] === 'auto');
-  const curAuto = state.expo.values[autoKey];
-  state.expo.values[autoKey] = nearestValueForStop(autoKey, exposureStop(autoKey,curAuto) - delta);
+  if(autoKeys().length){
+    applyAutoCompensation(before);
+  }
   save();
   renderModules();
 }
@@ -312,7 +352,7 @@ function updateFrame(){
   const eq = state.focal * crop;
   const w = Math.max(30, Math.min(220, 42 + eq * 1.35));
   sub.style.width = `${w}px`;
-  meta.textContent = `≈ ${Math.round(eq)} mm FF`;
+  meta.textContent = `${cam?.name || ''} · ≈ ${Math.round(eq)} mm FF`;
 }
 function estimateIsoFromLux(lux, aperture, shutterFraction='1/50'){
   if(!lux || lux <= 0) return Number(isos[0]);

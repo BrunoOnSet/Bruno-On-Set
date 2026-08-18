@@ -29,3 +29,5 @@ Installation/test :
 
 
 V2 : focale avec raccourcis, FRAME simplifié, DOF en f/ et cm, LIGHT avec ISO mini estimé, MEDIA Mb/s ↔ MB/s, EXPO avec rôles 🔒 / M / A.
+
+V3 : nouvelle logique EXPO sans BASE, bascule simple M / A sur chaque ligne, compensation auto multi-paramètres avec priorité ISO → ND → Shutter → Diaph, et lecture des ISO natifs / EI depuis BOS Camera DB V1.2.
