@@ -9,7 +9,7 @@ const defaultState = {
   open: { expo: true, frame: true, dof: true, light: false, media: false },
   dof: { aperture: 2.8, distanceCm: 250 },
   media: { bitrate: 250, unit: 'Mb/s', card: 256 },
-  light: { fixture: 'Amaran 200x S', aperture: '2.8' },
+  light: { fixture: 'cob200xs', aperture: '2.8' },
   expo: {
     values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
     roles: { aperture: 'manual', iso: 'manual', shutter: 'manual', nd: 'manual' }
@@ -30,14 +30,10 @@ const isos = ['100','125','160','200','250','320','400','500','640','800','1000'
 const shutters = ['1/24','1/25','1/30','1/40','1/48','1/50','1/60','1/80','1/100','1/120','1/125','1/160','1/200','1/250','1/320','1/400','1/500','1/640','1/800'];
 const nds = ['0','0.3','0.6','0.9','1.2','1.5','1.8','2.1','2.4','2.7','3.0','3.3','3.6'];
 const AUTO_PRIORITY = ['iso','nd','shutter','aperture'];
-const demoLights = {
-  'Amaran 200x S': { lux1: 34000, note: 'Donnée de démonstration V3' },
-  'Aputure 300d II': { lux1: 45000, note: 'Donnée de démonstration V3' },
-  'Nanlite Forza 300B II': { lux1: 40000, note: 'Donnée de démonstration V3' },
-  'Godox LA200Bi': { lux1: 36000, note: 'Donnée de démonstration V3' }
-};
 
 let cameras = [];
+let lightDatabase = null;
+let lightFixtures = [];
 let state = loadState();
 normalizeState();
 
@@ -77,6 +73,47 @@ function fmtDuration(sec){ if(!isFinite(sec) || sec < 0) return '—'; const h=M
 function optionList(arr,val,prefix=''){ return arr.map(x => `<option value="${x}" ${String(x)===String(val)?'selected':''}>${prefix}${x}</option>`).join(''); }
 function appLink(id){ const ready = APP_LINKS[id] && APP_LINKS[id] !== '#'; return `<div class="app-link"><button class="${ready?'ready':''}" data-applink="${id}" ${ready?'':'disabled'}>${ready?'Ouvrir l’app complète ↗':'App complète · lien à connecter'}</button></div>`; }
 function bitrateToMbPerSec(){ return state.media.unit === 'Mb/s' ? Number(state.media.bitrate) : Number(state.media.bitrate) * 8; }
+function bare5600Data(fixture){
+  const bare = fixture?.calculator?.accessories?.bare;
+  const data = bare?.data?.['5600'] || bare?.data?.[5600];
+  return Array.isArray(data) && data.length ? data : null;
+}
+function isCockpitLightUsable(fixture){
+  return !!(fixture?.capabilities?.lightCalculator && fixture?.calculator && bare5600Data(fixture));
+}
+function currentLight(){ return lightFixtures.find(f => f.id === state.light.fixture) || lightFixtures[0] || null; }
+function lightOptionsHtml(){
+  if(!lightFixtures.length) return '<option value="">Aucune donnée disponible</option>';
+  const groups = new Map();
+  for(const f of lightFixtures){
+    const brand = f.brand || 'Autres';
+    if(!groups.has(brand)) groups.set(brand, []);
+    groups.get(brand).push(f);
+  }
+  return [...groups.entries()].map(([brand, items]) => `<optgroup label="${esc(brand)}">${items.map(f => `<option value="${esc(f.id)}" ${f.id===state.light.fixture?'selected':''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
+}
+function prepareLightState(){
+  const legacy = {
+    'Amaran 200x S':'cob200xs',
+    'Aputure 300d II':'ls300d2',
+    'Nanlite Forza 300B II':'nanForza300b2',
+    'Godox LA200Bi':'godoxLa200bi'
+  };
+  if(legacy[state.light.fixture]) state.light.fixture = legacy[state.light.fixture];
+  if(!lightFixtures.some(f => f.id === state.light.fixture)){
+    state.light.fixture = lightFixtures.some(f => f.id === 'cob200xs') ? 'cob200xs' : (lightFixtures[0]?.id || '');
+  }
+}
+function luxAtDistance(fixture, targetM){
+  const data = bare5600Data(fixture);
+  if(!data) return null;
+  const points = data.map(([distance,lux]) => ({ distance:Number(distance), lux:Number(lux) })).filter(p => p.distance > 0 && p.lux > 0);
+  if(!points.length) return null;
+  const exact = points.find(p => Math.abs(p.distance - targetM) < 1e-9);
+  if(exact) return { lux: exact.lux, exact:true, sourceDistance:exact.distance };
+  const nearest = points.reduce((a,b) => Math.abs(Math.log(b.distance/targetM)) < Math.abs(Math.log(a.distance/targetM)) ? b : a);
+  return { lux: nearest.lux * Math.pow(nearest.distance / targetM, 2), exact:false, sourceDistance:nearest.distance };
+}
 function expoTotal(values=state.expo.values){ return exposureStop('aperture', values.aperture) + exposureStop('iso', values.iso) + exposureStop('shutter', values.shutter) + exposureStop('nd', values.nd); }
 function autoKeys(){ return AUTO_PRIORITY.filter(k => state.expo.roles[k] === 'auto'); }
 function allAuto(){ return autoKeys().length === 4; }
@@ -98,13 +135,20 @@ function isoAllowedValues(){
 }
 
 async function init(){
-  try {
-    const r = await fetch('data/cameras.json', { cache: 'no-store' });
-    const j = await r.json();
-    cameras = j.cameras || [];
-  } catch (e) {
-    cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
+  const [cameraResult, lightResult] = await Promise.allSettled([
+    fetch('data/cameras.json', { cache: 'no-store' }).then(r => r.json()),
+    fetch('data/lights.json', { cache: 'no-store' }).then(r => r.json())
+  ]);
+  if(cameraResult.status === 'fulfilled') cameras = cameraResult.value.cameras || cameraResult.value.fixtures || [];
+  else cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
+  if(lightResult.status === 'fulfilled'){
+    lightDatabase = lightResult.value;
+    lightFixtures = (lightDatabase.fixtures || []).filter(isCockpitLightUsable);
+  } else {
+    lightDatabase = null;
+    lightFixtures = [];
   }
+  prepareLightState();
   ensureExpoValuesFitCamera();
   setupTheme();
   renderCameraSelect();
@@ -193,14 +237,13 @@ function renderBody(id){
 
   if(id === 'frame') return `
     <div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div>
-    <div class="warning">Aperçu relatif V3 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>
+    <div class="warning">Aperçu relatif V4 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>
     ${appLink(id)}`;
 
   if(id === 'light'){
-    const names = Object.keys(demoLights);
     return `
       <div class="grid2 light-top">
-        <label><span>Ma lumière</span><select id="lightFixture">${optionList(names, state.light.fixture)}</select></label>
+        <label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label>
         <label><span>Diaph</span><select id="lightAperture">${optionList(apertures, state.light.aperture, 'f/')}</select></label>
       </div>
       <div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div>
@@ -208,7 +251,7 @@ function renderBody(id){
         <div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div>
         <div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div>
       </div>
-      <div class="demo">ISO minimum estimé pour une exposition correcte à 1/50. Les valeurs photométriques restent provisoires tant que la database officielle de LIGHT n’est pas branchée.</div>
+      <div class="demo" id="lightSourceNote">BOS LIGHT DB · 100 % · 5600 K · Nu</div>
       ${appLink(id)}`;
   }
 
@@ -374,14 +417,25 @@ function updateLight(){
   const b = document.getElementById('lux3');
   const i1 = document.getElementById('iso1');
   const i3 = document.getElementById('iso3');
+  const note = document.getElementById('lightSourceNote');
   if(!a || !b || !i1 || !i3) return;
-  const d = demoLights[state.light.fixture] || { lux1: 0 };
-  const lux1 = Math.round(d.lux1);
-  const lux3 = Math.round(d.lux1 / 9);
-  a.textContent = `${lux1.toLocaleString('fr-FR')} lx`;
-  b.textContent = `${lux3.toLocaleString('fr-FR')} lx`;
-  i1.textContent = `ISO min ${estimateIsoFromLux(lux1, state.light.aperture)} @1/50`;
-  i3.textContent = `ISO min ${estimateIsoFromLux(lux3, state.light.aperture)} @1/50`;
+  const fixture = currentLight();
+  if(!fixture){
+    a.textContent = '—'; b.textContent = '—'; i1.textContent = 'ISO min —'; i3.textContent = 'ISO min —';
+    if(note) note.textContent = 'BOS LIGHT DB · aucune photométrie Nu / 5600 K disponible.';
+    return;
+  }
+  const at1 = luxAtDistance(fixture, 1);
+  const at3 = luxAtDistance(fixture, 3);
+  const renderLux = r => r ? `${r.exact?'':'≈ '}${Math.round(r.lux).toLocaleString('fr-FR')} lx` : '—';
+  a.textContent = renderLux(at1);
+  b.textContent = renderLux(at3);
+  i1.textContent = at1 ? `ISO min ${estimateIsoFromLux(at1.lux, state.light.aperture)} @1/50` : 'ISO min —';
+  i3.textContent = at3 ? `ISO min ${estimateIsoFromLux(at3.lux, state.light.aperture)} @1/50` : 'ISO min —';
+  const calculated = [at1,at3].some(r => r && !r.exact);
+  const bare = fixture?.calculator?.accessories?.bare;
+  const quality = bare?.quality === 'measured' ? 'mesure constructeur' : (bare?.quality === 'single' ? 'mesure de référence' : (bare?.quality || 'donnée DB'));
+  if(note) note.textContent = `BOS LIGHT DB ${lightDatabase?.databaseVersion || 'V1.0'} · ${quality}${calculated ? ' · ≈ = calcul de distance depuis une mesure DB' : ''}`;
 }
 function renderCustomize(){
   const root = document.getElementById('customizeList');
