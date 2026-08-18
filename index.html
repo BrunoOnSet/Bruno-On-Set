@@ -26,16 +26,26 @@
 
     <section class="context cardlike">
       <div class="context-title"><span>Caméra</span></div>
-      <div class="context-grid">
-        <label><span>Caméra</span><select id="cameraSelect"></select></label>
-        <label><span>Focale</span><div class="unit-input"><input id="focalInput" type="number" inputmode="decimal" min="1" max="1000" step="1" value="35"><b>mm</b></div></label>
+
+      <div class="camera-choice">
+        <span class="field-label">Marque</span>
+        <div class="brand-chips" id="cameraBrandMode" aria-label="Choisir la marque"></div>
+
+        <span class="field-label camera-model-label">Caméra</span>
+        <div class="camera-select-wrap">
+          <select class="camera-select" id="cameraSelect" aria-label="Choisir la caméra"></select>
+        </div>
       </div>
-      <div class="preset-row" id="focalPresets" aria-label="Raccourcis focale"></div>
+
+      <div class="focal-block">
+        <label><span>Focale</span><div class="unit-input"><input id="focalInput" type="number" inputmode="decimal" min="1" max="1000" step="1" value="35"><b>mm</b></div></label>
+        <div class="preset-row" id="focalPresets" aria-label="Raccourcis focale"></div>
+      </div>
     </section>
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V4</footer>
+    <footer class="footer">BOS — Bruno OnSet · V5</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">

@@ -23,3 +23,18 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 @media(min-width:700px){.shell{padding-top:20px}.module-body{padding:16px 18px}.topbar{top:12px}}
 
 .expo-info{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;padding:0 0 10px 0}.expo-info strong{display:block;font-size:11px;color:var(--muted);font-weight:700}.expo-info span{display:block;font-size:18px;font-weight:800;letter-spacing:-.3px;margin-top:2px}.expo-info small{font-size:10px;color:var(--muted);text-align:right;max-width:42%}.role-pill{font-size:14px}.role-pill[data-role="auto"]{background:var(--blue);border-color:var(--blue);color:white}.role-pill[data-role="manual"]{background:var(--panel2);border-color:var(--line);color:var(--text)}
+
+
+/* V5 — choix caméra identique à EXPO : marque puis modèle */
+.camera-choice{margin-bottom:14px}
+.brand-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.brand-chips button{border:1px solid var(--line);background:var(--panel2);color:var(--text);min-height:36px;padding:0 12px;border-radius:999px;font-weight:850;font-size:12px;cursor:pointer}
+.brand-chips button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.camera-model-label{display:block;margin-top:2px;margin-bottom:6px}
+.camera-select-wrap{position:relative;width:100%}
+.camera-select-wrap::after{content:"⌄";position:absolute;right:14px;top:50%;transform:translateY(-55%);color:var(--muted);font-size:16px;font-weight:900;pointer-events:none}
+.camera-select{width:100%;min-width:0;height:46px;appearance:none;-webkit-appearance:none;border:1px solid var(--line);border-radius:14px;background:var(--input);color:var(--text);padding:0 42px 0 13px;font:inherit;font-size:13px;font-weight:850;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.camera-select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.camera-select option{background:var(--panel);color:var(--text)}
+.focal-block{padding-top:12px;border-top:1px solid var(--line)}
+@media(max-width:520px){.brand-chips{gap:6px}.brand-chips button{min-height:34px;padding:0 10px;font-size:11px}.camera-select{font-size:12px}}

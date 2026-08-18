@@ -33,3 +33,5 @@ V2 : focale avec raccourcis, FRAME simplifié, DOF en f/ et cm, LIGHT avec ISO m
 V3 : nouvelle logique EXPO sans BASE, bascule simple M / A sur chaque ligne, compensation auto multi-paramètres avec priorité ISO → ND → Shutter → Diaph, et lecture des ISO natifs / EI depuis BOS Camera DB V1.2.
 
 V4 : module LIGHT connecté à BOS_LIGHT_DB_V1_0. La liste et la photométrie proviennent désormais de data/lights.json. Le cockpit reste fixé à 100 %, 5600 K et Nu ; les lux à 1 m / 3 m utilisent la mesure exacte quand elle existe, sinon un calcul en loi inverse du carré depuis la mesure DB la plus proche, signalé par ≈.
+
+V5 : choix caméra aligné sur BOS EXPO V3.31 — boutons de marque + menu déroulant limité aux modèles de la marque, avec mémorisation du dernier modèle choisi par marque.

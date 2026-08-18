@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'bos-cockpit-v3';
+const LAST_CAMERA_BY_BRAND_KEY = 'bos-onset-last-camera-by-brand';
 const FOCAL_PRESETS = [18,24,28,35,50,85,105,135];
 const defaultState = {
   theme: 'light',
@@ -169,11 +170,65 @@ function setupTheme(){
   document.documentElement.dataset.theme = state.theme;
   document.querySelector('meta[name="theme-color"]').content = state.theme === 'dark' ? '#090b0f' : '#ffffff';
 }
+function cameraBrand(c){
+  return String(c?.brand || c?.group || 'Autre').trim() || 'Autre';
+}
+function cameraShortLabel(c){
+  const name = String(c?.name || c?.id || '');
+  const brand = String(c?.brand || '').trim();
+  return brand && name.toLowerCase().startsWith((brand + ' ').toLowerCase()) ? name.slice(brand.length + 1) : name;
+}
+function cameraBrands(){
+  const seen = new Set(), brands = [];
+  cameras.forEach(c => {
+    const brand = cameraBrand(c);
+    if(!seen.has(brand)){ seen.add(brand); brands.push(brand); }
+  });
+  return brands;
+}
+function camerasForBrand(brand){
+  return cameras.filter(c => cameraBrand(c) === brand);
+}
+function getLastCameraForBrand(brand){
+  try{
+    const saved = JSON.parse(localStorage.getItem(LAST_CAMERA_BY_BRAND_KEY) || '{}');
+    const id = saved?.[brand];
+    return camerasForBrand(brand).some(c => c.id === id) ? id : null;
+  }catch(_){ return null; }
+}
+function rememberCameraForBrand(camera){
+  if(!camera) return;
+  try{
+    const saved = JSON.parse(localStorage.getItem(LAST_CAMERA_BY_BRAND_KEY) || '{}');
+    saved[cameraBrand(camera)] = camera.id;
+    localStorage.setItem(LAST_CAMERA_BY_BRAND_KEY, JSON.stringify(saved));
+  }catch(_){}
+}
+function renderCameraBrandButtons(){
+  const host = document.getElementById('cameraBrandMode');
+  if(!host) return;
+  const activeBrand = cameraBrand(currentCamera());
+  host.innerHTML = cameraBrands().map(brand => `<button type="button" data-camerabrand="${esc(brand)}" class="${brand===activeBrand?'active':''}">${esc(brand)}</button>`).join('');
+}
 function renderCameraSelect(){
   const s = document.getElementById('cameraSelect');
-  const groups = {};
-  cameras.forEach(c => (groups[c.group || 'AUTRES'] ??= []).push(c));
-  s.innerHTML = Object.entries(groups).map(([g, list]) => `<optgroup label="${esc(g)}">${list.map(c => `<option value="${esc(c.id)}" ${c.id===state.cameraId?'selected':''}>${esc(c.name)}</option>`).join('')}</optgroup>`).join('');
+  if(!s) return;
+  const activeBrand = cameraBrand(currentCamera());
+  const list = camerasForBrand(activeBrand);
+  s.innerHTML = list.map(c => `<option value="${esc(c.id)}" ${c.id===state.cameraId?'selected':''}>${esc(cameraShortLabel(c))}</option>`).join('');
+  s.value = state.cameraId;
+  s.title = s.options[s.selectedIndex]?.textContent || '';
+  renderCameraBrandButtons();
+}
+function applyCameraSelection(nextCameraId){
+  const next = cameras.find(c => c.id === nextCameraId);
+  if(!next) return;
+  state.cameraId = next.id;
+  rememberCameraForBrand(next);
+  ensureExpoValuesFitCamera();
+  save();
+  renderCameraSelect();
+  renderModules();
 }
 function renderTopFocal(){
   const root = document.getElementById('focalPresets');
@@ -181,11 +236,17 @@ function renderTopFocal(){
   root.innerHTML = FOCAL_PRESETS.map(v => `<button type="button" class="preset-btn ${Number(state.focal)===v?'active':''}" data-focalpreset="${v}">${v}</button>`).join('');
 }
 function bindGlobal(){
+  document.getElementById('cameraBrandMode').addEventListener('click', e => {
+    const btn = e.target.closest('[data-camerabrand]');
+    if(!btn) return;
+    const brand = btn.dataset.camerabrand;
+    const remembered = getLastCameraForBrand(brand);
+    const first = camerasForBrand(brand)[0];
+    if(remembered) applyCameraSelection(remembered);
+    else if(first) applyCameraSelection(first.id);
+  });
   document.getElementById('cameraSelect').addEventListener('change', e => {
-    state.cameraId = e.target.value;
-    ensureExpoValuesFitCamera();
-    save();
-    renderModules();
+    applyCameraSelection(e.target.value);
   });
   document.getElementById('focalInput').addEventListener('input', e => {
     state.focal = Math.max(1, Number(e.target.value) || 35);
