@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'bos-cockpit-v3';
+const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
+const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const LIGHT_DB_FALLBACK_URL = 'data/lights.json';
 const LAST_CAMERA_BY_BRAND_KEY = 'bos-onset-last-camera-by-brand';
@@ -35,6 +37,7 @@ const nds = ['0','0.3','0.6','0.9','1.2','1.5','1.8','2.1','2.4','2.7','3.0','3.
 const AUTO_PRIORITY = ['iso','nd','shutter','aperture'];
 
 let cameras = [];
+let cameraDatabaseSource = 'none';
 let lightDatabase = null;
 let lightFixtures = [];
 let lightDatabaseSource = 'none';
@@ -138,6 +141,31 @@ function isoAllowedValues(){
   return isos.filter(v => Number(v) >= floor);
 }
 
+async function loadSharedCameraDatabase(){
+  try {
+    const remote = await fetch(CAMERA_DB_URL, { cache: 'no-store' });
+    if(!remote.ok) throw new Error(`BOS-CAMERA-DB HTTP ${remote.status}`);
+    const data = await remote.json();
+    if(!data || !Array.isArray(data.cameras)) throw new Error('BOS-CAMERA-DB invalide');
+    cameraDatabaseSource = 'remote';
+    return data;
+  } catch (remoteError) {
+    console.warn('BOS-CAMERA-DB distante indisponible, utilisation du fallback local.', remoteError);
+    try {
+      const fallback = await fetch(CAMERA_DB_FALLBACK_URL, { cache: 'no-store' });
+      if(!fallback.ok) throw new Error(`Fallback CAMERA HTTP ${fallback.status}`);
+      const data = await fallback.json();
+      if(!data || !Array.isArray(data.cameras)) throw new Error('Fallback CAMERA invalide');
+      cameraDatabaseSource = 'fallback';
+      return data;
+    } catch (fallbackError) {
+      console.error('Aucune base caméra disponible.', fallbackError);
+      cameraDatabaseSource = 'none';
+      return null;
+    }
+  }
+}
+
 async function loadSharedLightDatabase(){
   try {
     const remote = await fetch(LIGHT_DB_URL, { cache: 'no-store' });
@@ -165,11 +193,15 @@ async function loadSharedLightDatabase(){
 
 async function init(){
   const [cameraResult, lightResult] = await Promise.allSettled([
-    fetch('data/cameras.json', { cache: 'no-store' }).then(r => r.json()),
+    loadSharedCameraDatabase(),
     loadSharedLightDatabase()
   ]);
-  if(cameraResult.status === 'fulfilled') cameras = cameraResult.value.cameras || cameraResult.value.fixtures || [];
-  else cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
+  if(cameraResult.status === 'fulfilled' && cameraResult.value){
+    cameras = cameraResult.value.cameras || [];
+  } else {
+    cameras = [{id:'ff',name:'Full Frame 36 mm',sensorWidthMm:36,dof:{label:'Full Frame',cocMm:.029,cropToFF:1}}];
+    cameraDatabaseSource = 'none';
+  }
   if(lightResult.status === 'fulfilled' && lightResult.value){
     lightDatabase = lightResult.value;
     lightFixtures = (lightDatabase.fixtures || []).filter(isCockpitLightUsable);

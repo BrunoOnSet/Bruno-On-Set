@@ -1,5 +1,7 @@
-const CACHE='bos-bruno-onset-v6';
+const CACHE='bos-bruno-onset-v7';
+const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
+const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const ASSETS=['./','index.html','style.css','app.js','manifest.webmanifest','data/cameras.json','data/lights.json','icons/icon-192.png','icons/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -13,7 +15,7 @@ self.addEventListener('activate',e=>e.waitUntil(
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
 
-  if(e.request.url===LIGHT_DB_URL){
+  if(SHARED_DB_URLS.has(e.request.url)){
     e.respondWith((async()=>{
       const cache=await caches.open(CACHE);
       try{

@@ -42,3 +42,5 @@ V6 — BOS-PROJECTEURS-DB partagé
 - data/lights.json n'est plus la source principale : il reste uniquement comme snapshot de secours hors ligne / indisponibilité distante.
 - Le service worker utilise un mode network-first pour la DB distante afin de récupérer les mises à jour du dépôt dès qu'elles existent, puis conserve la dernière réponse distante en cache.
 - LIGHT, PLAN et Bruno OnSet peuvent ainsi pointer vers la même source commune.
+
+V7 : BOS-CAMERA-DB devient la source principale des caméras via GitHub. data/cameras.json est conservé uniquement comme fallback local/hors connexion. Tous les modules de Bruno OnSet (sélection caméra, EXPO, DOF, FRAME, MEDIA) utilisent la même liste chargée depuis cette DB commune. Le service worker applique un mode network-first aux Camera DB et Projecteurs DB.
