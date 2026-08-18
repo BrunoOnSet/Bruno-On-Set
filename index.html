@@ -25,16 +25,17 @@
     </header>
 
     <section class="context cardlike">
-      <div class="context-title"><span>CONTEXTE</span><small>partagé entre les modules</small></div>
+      <div class="context-title"><span>Caméra</span></div>
       <div class="context-grid">
         <label><span>Caméra</span><select id="cameraSelect"></select></label>
         <label><span>Focale</span><div class="unit-input"><input id="focalInput" type="number" inputmode="decimal" min="1" max="1000" step="1" value="35"><b>mm</b></div></label>
       </div>
+      <div class="preset-row" id="focalPresets" aria-label="Raccourcis focale"></div>
     </section>
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V1</footer>
+    <footer class="footer">BOS — Bruno OnSet · V2</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">

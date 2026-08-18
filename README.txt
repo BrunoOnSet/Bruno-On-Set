@@ -26,3 +26,6 @@ Installation/test :
 - URLs réelles des applications BOS complètes (constante APP_LINKS dans app.js) ;
 - stockage/calibrage partagé de FRAME ;
 - database officielle des projecteurs de LIGHT.
+
+
+V2 : focale avec raccourcis, FRAME simplifié, DOF en f/ et cm, LIGHT avec ISO mini estimé, MEDIA Mb/s ↔ MB/s, EXPO avec rôles 🔒 / M / A.
