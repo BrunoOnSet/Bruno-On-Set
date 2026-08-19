@@ -78,3 +78,7 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 
 /* V12 — shutter caméra + reset EXPO */
 .expo-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}.expo-reset-btn{min-height:36px;padding:7px 11px;font-size:11px}.camera-settings-grid label>span{white-space:nowrap}
+
+
+/* V13 — bulle caméra refermable + ISO global */
+.context{padding:0;overflow:hidden}.context-head{padding:14px 15px}.context-head .module-title small{display:block;color:var(--muted);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.context-body{display:none;padding:14px}.context.open .context-body{display:block}.camera-settings-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:520px){.camera-settings-grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.context-head .module-title small{max-width:220px}}
