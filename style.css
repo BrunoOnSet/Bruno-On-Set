@@ -63,3 +63,15 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 .camera-limits-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .camera-limits-grid label>span{font-weight:800;letter-spacing:.5px}
 @media(max-width:520px){.camera-limits-grid{grid-template-columns:1fr 1fr}}
+
+
+/* V11 — verrouillage EXPO */
+.expo-lock-row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:9px;align-items:end}
+.expo-lock-btn{width:48px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--panel2);display:grid;place-items:center;cursor:pointer;font-size:17px;line-height:1;opacity:.55}
+.expo-lock-btn.active{opacity:1;background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+.expo-lock-btn:active{transform:scale(.97)}
+.expo-lock-row.locked select:disabled{opacity:.58;cursor:not-allowed}
+.expo-lock-row.limit-error .expo-simple-row>span{color:var(--danger);font-weight:800}
+.expo-lock-row.limit-error select.limit-error-value,.expo-lock-row.limit-error select.limit-error-value:disabled{opacity:1!important;color:var(--danger)!important;border-color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 8%,var(--input))!important;font-weight:800}
+.context select:disabled{opacity:.58;cursor:not-allowed}
+@media(max-width:520px){.expo-lock-row{grid-template-columns:44px minmax(0,1fr)}.expo-lock-btn{width:44px}}

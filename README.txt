@@ -51,3 +51,5 @@ V8 : EXPO signale désormais une compensation impossible. Le réglage Auto arriv
 V9 : Caméra devient le réglage global (focale, diaph, distance). DOF et LIGHT consomment ces valeurs sans les redemander. EXPO abandonne M/A par ligne : ISO/Shutter/ND sont liés et compensent selon une priorité directionnelle. Ajout Diaph Manuel/Auto + ISO MIN/MAX libres.
 
 V10 : ISO MIN/MAX déplacés dans la bulle Caméra, ajout DIAPH MIN/MAX, suppression du mode Diaph Manuel/Auto dans EXPO, et retour du Diaph comme réglage EXPO lié. Le diaph participe toujours en dernier recours à la compensation dans ses limites.
+
+V11 : ajout d’un cadenas indépendant devant Diaph / ISO / Shutter / ND dans EXPO. Un réglage verrouillé est figé, son champ est désactivé et il est totalement exclu de la compensation. Le verrou Diaph fige aussi le Diaph commun dans la bulle Caméra ; le verrou ISO fige également ses limites ISO MIN/MAX.
