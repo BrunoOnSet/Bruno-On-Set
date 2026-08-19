@@ -229,3 +229,8 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .sheet-head{display:flex;justify-content:space-between;align-items:center}
 .brand,.brandtext,.bosmark,.customize-btn,.mode-btn-icon{display:none!important}
 @media(max-width:380px){.app,.shell{padding-left:12px;padding-right:12px}.topbar h1,.bos-top-title h1{font-size:24px}}
+
+
+/* V20 — entête compact : suppression du grand titre Bruno OnSet */
+.bos-top-title{gap:0}
+.topbar{padding-top:14px;padding-bottom:14px}
