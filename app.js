@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'bos-cockpit-v14';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v15';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -324,7 +324,7 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div><div class="warning">Aperçu relatif V12 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>${appLink(id)}`;
+  if(id==='frame') return `<div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div><div class="warning">Aperçu relatif V15 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div><div class="luxgrid"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
@@ -333,16 +333,49 @@ function renderBody(id){
     const warnText=warn?(warn.reason==='locked'
       ?`Correction impossible · les autres réglages disponibles sont verrouillés · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`
       :`Correction impossible · ${expoLabel(warn.key)} limité à ${formatExpoValue(warn.key,currentExpoValue(warn.key))} · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`):'';
-    return `<div class="expo-toolbar"><button type="button" id="expoResetBtn" class="secondary expo-reset-btn">↺ RESET</button></div>
-      <div class="expo-simple-rows">${['aperture','iso','shutter','nd'].map(renderExpoRow).join('')}</div>
-      ${warn?`<div class="expo-warning">${warnText}</div>`:`<div class="base-note">🔒 exclut totalement un réglage de la compensation.<br>Assombrir : ISO ↓ → ND ↑ → Shutter → Diaph.<br>Éclaircir : ND ↓ → ISO ↑ → Shutter → Diaph.</div>`}
-      ${appLink(id)}`;
+    return `<div class="expo-calc-block">
+      <div class="expo-calc-head">
+        <div>
+          <div class="expo-calc-kicker">CALCUL</div>
+          <div class="expo-calc-note">Réglage actif : modifie un paramètre, les autres compensent automatiquement.</div>
+        </div>
+        <button type="button" id="expoResetBtn" class="expo-ref-btn">= RÉF.</button>
+      </div>
+      <div class="expo-calc-grid">${['aperture','iso','shutter','nd'].map(renderExpoCalcItem).join('')}</div>
+    </div>
+    <div class="expo-priority-note">Assombrir : ISO ↓ → ND ↑ → Shutter → Diaph · Éclaircir : ND ↓ → ISO ↑ → Shutter → Diaph.</div>
+    ${warn?`<div class="expo-warning">${warnText}</div>`:`<div class="expo-calc-summary ${expoCalcResidualClass()}">${expoCalcSummary()}</div>`}
+    ${appLink(id)}`;
   }
   return '';
 }
 function expoLabel(k){ return {aperture:'Diaph',iso:'ISO',shutter:'Shutter',nd:'ND'}[k]; }
 function currentExpoValue(k){ return String(state.expo.values[k]); }
-function formatExpoValue(k,v){ return k==='aperture'?`f/${v}`:(k==='nd'?`ND ${v}`:String(v)); }
+function formatThousandsFr(v){ return Number(v).toLocaleString('fr-FR').replace(/\u202f/g,' '); }
+function ndCalcDisplay(v){
+  const density=Number(v)||0,stops=density/0.3,factor=Math.pow(2,stops);
+  const stopText=`${Number(stops.toFixed(1)).toLocaleString('fr-FR')} ${Math.abs(stops-1)<1e-9?'stop':'stops'}`;
+  return `${stopText} · ND${Math.round(factor)} · ${density.toFixed(1).replace('.',',')}`;
+}
+function formatExpoValue(k,v){
+  if(k==='aperture') return `f/${String(v).replace('.',',')}`;
+  if(k==='iso') return `ISO ${formatThousandsFr(v)}`;
+  if(k==='shutter') return String(v);
+  if(k==='nd') return ndCalcDisplay(v);
+  return String(v);
+}
+function expoReferenceValues(){ return {aperture:String(state.aperture),iso:String(state.cameraIso),shutter:String(state.cameraShutter),nd:'0'}; }
+function exposureTotalFor(values){ return exposureStop('aperture',values.aperture)+exposureStop('iso',values.iso)+exposureStop('shutter',values.shutter)+exposureStop('nd',values.nd); }
+function expoCalcResidual(){ return exposureTotalFor(expoReferenceValues())-expoTotal(); }
+function expoCalcResidualClass(){ return Math.abs(expoCalcResidual())<=0.20?'is-ok':'is-warning'; }
+function expoCalcSummary(){
+  const ref=expoReferenceValues();
+  const parts=['aperture','iso','shutter','nd'].flatMap(k=>String(ref[k])===String(state.expo.values[k])?[]:[`${formatExpoValue(k,ref[k])} → ${formatExpoValue(k,state.expo.values[k])}`]);
+  const residual=expoCalcResidual();
+  if(!parts.length) return 'CALCUL aligné sur la référence Caméra.';
+  if(Math.abs(residual)<=0.20) return `${parts.join(' · ')} · EXPOSITION CONSERVÉE`;
+  return `${parts.join(' · ')} · ${Math.abs(residual).toFixed(1).replace('.',',')} stop restant`;
+}
 function valuesForKey(k){
   if(k==='aperture'){
     const vals=apertureRangeValues();
@@ -357,13 +390,22 @@ function valuesForKey(k){
   if(k==='shutter')return shutters;
   return nds;
 }
-function renderExpoRow(k){
-  const vals=valuesForKey(k),pref=k==='aperture'?'f/':(k==='nd'?'ND ':'');
-  const limitError=state.expo.limitWarning?.key===k;
-  const locked=!!state.expo.locks[k];
-  return `<div class="expo-lock-row ${limitError?'limit-error':''} ${locked?'locked':''}">
-    <button type="button" class="expo-lock-btn ${locked?'active':''}" data-expolock="${k}" aria-pressed="${locked?'true':'false'}" title="${locked?'Déverrouiller':'Verrouiller'} ${expoLabel(k)}">${locked?'🔒':'🔓'}</button>
-    <label class="expo-simple-row"><span>${expoLabel(k)}</span><select class="${limitError?'limit-error-value':''}" data-expokey="${k}" ${locked?'disabled':''}>${optionList(vals,currentExpoValue(k),pref)}</select></label>
+function expoOptionsHtml(k){
+  return valuesForKey(k).map(v=>`<option value="${v}" ${String(v)===currentExpoValue(k)?'selected':''}>${formatExpoValue(k,v)}</option>`).join('');
+}
+function lockSvg(locked=false){
+  return locked
+    ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10V7a4 4 0 0 1 8 0v3"/><rect x="5" y="10" width="14" height="10" rx="2"/></svg>`
+    : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 9.2-2.7"/><rect x="5" y="10" width="14" height="10" rx="2"/></svg>`;
+}
+function renderExpoCalcItem(k){
+  const limitError=state.expo.limitWarning?.key===k,locked=!!state.expo.locks[k];
+  return `<div class="expo-calc-item ${limitError?'limit-error':''} ${locked?'locked':''}">
+    <button type="button" class="expo-calc-lock ${locked?'active':''}" data-expolock="${k}" aria-pressed="${locked?'true':'false'}" title="${locked?'Déverrouiller':'Verrouiller'} ${expoLabel(k)}">${lockSvg(locked)}</button>
+    <label class="expo-calc-value ${limitError?'limit-error-value':''}">
+      <span>${expoLabel(k)}</span>
+      <select data-expokey="${k}" ${locked?'disabled':''}>${expoOptionsHtml(k)}</select>
+    </label>
   </div>`;
 }
 
@@ -460,30 +502,30 @@ function toggleExpoLock(key){
   renderGlobalCameraControls();
   renderModules();
 }
+function alignExpoToCameraReference(){
+  state.expo.values.aperture=String(state.aperture);
+  state.expo.values.iso=String(state.cameraIso);
+  state.expo.values.shutter=String(state.cameraShutter);
+  state.expo.values.nd='0';
+  state.expo.limitWarning=null;
+}
 function globalApertureChanged(newVal){
   state.aperture=Number(newVal);
-  state.expo.values.aperture=String(newVal);
-  state.expo.limitWarning=null;
+  alignExpoToCameraReference();
   save(); renderGlobalCameraControls(); renderModules();
 }
 function globalIsoChanged(newVal){
   state.cameraIso=String(newVal);
-  state.expo.values.iso=String(newVal);
-  state.expo.limitWarning=null;
+  alignExpoToCameraReference();
   save(); renderGlobalCameraControls(); renderModules();
 }
 function globalShutterChanged(newVal){
   state.cameraShutter=String(newVal);
-  state.expo.values.shutter=String(newVal);
-  state.expo.limitWarning=null;
+  alignExpoToCameraReference();
   save(); renderGlobalCameraControls(); renderModules();
 }
 function resetExpoToCameraBase(){
-  state.expo.values.aperture=String(state.aperture);
-  state.expo.values.shutter=String(state.cameraShutter);
-  state.expo.values.iso=String(state.cameraIso);
-  state.expo.values.nd='0';
-  state.expo.limitWarning=null;
+  alignExpoToCameraReference();
   save(); renderModules();
 }
 function expoChanged(key,newVal){
