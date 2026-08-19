@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'bos-cockpit-v13';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v14';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -541,17 +541,54 @@ function updateDOF(){
 }
 function updateMedia(){ const el=document.getElementById('mediaMain'),sub=document.getElementById('mediaSub'); if(!el)return; const bitrateMb=bitrateToMbPerSec(),sec=(Number(state.media.card)*1000*8)/bitrateMb; el.textContent=fmtDuration(sec); if(sub)sub.textContent=`temps d’enregistrement · ${bitrateMb.toLocaleString('fr-FR')} Mb/s · réserve 0 %`; }
 function updateFrame(){ const sub=document.getElementById('frameSubject'),meta=document.getElementById('frameMeta'); if(!sub||!meta)return; const cam=currentCamera(),crop=36/(cam?.sensorWidthMm||36),eq=state.focal*crop,w=Math.max(30,Math.min(220,42+eq*1.35)); sub.style.width=`${w}px`; meta.textContent=`${cam?.name||''} · ≈ ${Math.round(eq)} mm FF`; }
-function estimateIsoFromLux(lux,aperture,shutterFraction='1/50'){
-  if(!lux||lux<=0)return Number(isos[0]); const [a,b]=shutterFraction.split('/').map(Number),t=a/b,N=Number(aperture),iso=(250*N*N)/(lux*t); let best=Number(isos[0]),diff=Infinity; for(const v of isos){const nv=Number(v),d=Math.abs(nv-iso);if(d<diff){diff=d;best=nv;}} return Math.max(100,best);
+function idealIsoFromLux(lux,aperture,shutterFraction){
+  if(!lux||lux<=0)return null;
+  const [a,b]=String(shutterFraction||'1/50').split('/').map(Number),t=a/b,N=Number(aperture);
+  if(!t||!N)return null;
+  return (250*N*N)/(lux*t);
+}
+function nearestIsoValue(target,minIso,maxIso){
+  const allowed=isos.map(Number).filter(v=>v>=minIso&&v<=maxIso);
+  if(!allowed.length)return Math.max(minIso,Math.min(maxIso,Math.round(target||minIso)));
+  let best=allowed[0],diff=Math.abs(best-target);
+  for(const v of allowed){const d=Math.abs(v-target);if(d<diff){diff=d;best=v;}}
+  return best;
+}
+function nearestNdForStops(stops){
+  const target=Math.max(0,Number(stops)||0);
+  const values=nds.map(Number);
+  let best=values[0],diff=Math.abs(best/0.3-target);
+  for(const v of values){const d=Math.abs(v/0.3-target);if(d<diff){diff=d;best=v;}}
+  return best;
+}
+function lightExposureAdvice(lux){
+  const shutter=state.cameraShutter||'1/50',aperture=state.aperture;
+  const minIso=Number(state.cameraLimits.isoMin)||100,maxIso=Number(state.cameraLimits.isoMax)||51200;
+  const ideal=idealIsoFromLux(lux,aperture,shutter);
+  if(!ideal)return {text:'Réglage —',status:'normal'};
+  if(ideal<minIso){
+    const excessStops=Math.log2(minIso/ideal);
+    const nd=nearestNdForStops(excessStops);
+    return {text:`ISO ${minIso.toLocaleString('fr-FR')} (min) · ND ${nd.toFixed(1)} · f/${aperture} · ${shutter}`,status:'bright'};
+  }
+  if(ideal>maxIso){
+    const missingStops=Math.log2(ideal/maxIso);
+    return {text:`ISO ${maxIso.toLocaleString('fr-FR')} (max) · manque ${missingStops.toFixed(1).replace('.',',')} stop · f/${aperture} · ${shutter}`,status:'dark'};
+  }
+  const iso=nearestIsoValue(ideal,minIso,maxIso);
+  return {text:`ISO ${iso.toLocaleString('fr-FR')} · f/${aperture} · ${shutter}`,status:'normal'};
 }
 function updateLight(){
   const a=document.getElementById('lux1'),b=document.getElementById('lux3'),i1=document.getElementById('iso1'),i3=document.getElementById('iso3'),note=document.getElementById('lightSourceNote'); if(!a||!b||!i1||!i3)return;
   const fixture=currentLight();
-  if(!fixture){a.textContent='—';b.textContent='—';i1.textContent='ISO min —';i3.textContent='ISO min —';if(note)note.textContent=`${lightDatabaseSource==='remote'?'BOS-PROJECTEURS-DB · en ligne':(lightDatabaseSource==='fallback'?'BOS-PROJECTEURS-DB · secours local':'Base projecteurs indisponible')} · aucune photométrie Nu / 5600 K disponible.`;return;}
+  if(!fixture){a.textContent='—';b.textContent='—';i1.textContent='Réglage —';i3.textContent='Réglage —';if(note)note.textContent=`${lightDatabaseSource==='remote'?'BOS-PROJECTEURS-DB · en ligne':(lightDatabaseSource==='fallback'?'BOS-PROJECTEURS-DB · secours local':'Base projecteurs indisponible')} · aucune photométrie Nu / 5600 K disponible.`;return;}
   const at1=luxAtDistance(fixture,1),at3=luxAtDistance(fixture,3),renderLux=r=>r?`${r.exact?'':'≈ '}${Math.round(r.lux).toLocaleString('fr-FR')} lx`:'—';
   a.textContent=renderLux(at1);b.textContent=renderLux(at3);
-  i1.textContent=at1?`ISO min ${estimateIsoFromLux(at1.lux,state.aperture)} · f/${state.aperture} · 1/50`:'ISO min —';
-  i3.textContent=at3?`ISO min ${estimateIsoFromLux(at3.lux,state.aperture)} · f/${state.aperture} · 1/50`:'ISO min —';
+  const advice1=at1?lightExposureAdvice(at1.lux):null,advice3=at3?lightExposureAdvice(at3.lux):null;
+  i1.textContent=advice1?advice1.text:'Réglage —';
+  i3.textContent=advice3?advice3.text:'Réglage —';
+  i1.dataset.status=advice1?.status||'normal';
+  i3.dataset.status=advice3?.status||'normal';
   const calculated=[at1,at3].some(r=>r&&!r.exact),bare=fixture?.calculator?.accessories?.bare,quality=bare?.quality==='measured'?'mesure constructeur':(bare?.quality==='single'?'mesure de référence':(bare?.quality||'donnée DB'));
   if(note){const src=lightDatabaseSource==='remote'?'en ligne':(lightDatabaseSource==='fallback'?'secours local':'indisponible');note.textContent=`BOS-PROJECTEURS-DB ${lightDatabase?.databaseVersion||''} · ${src} · ${quality}${calculated?' · ≈ = calcul de distance depuis une mesure DB':''}`;}
 }

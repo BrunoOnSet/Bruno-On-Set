@@ -57,3 +57,5 @@ V11 : ajout d’un cadenas indépendant devant Diaph / ISO / Shutter / ND dans E
 V12 : ajout du Shutter dans la bulle Caméra, ligne compacte Diaph / Shutter / Distance, suppression de l’info ISO natif dans EXPO et ajout d’un RESET EXPO vers la référence Caméra (Diaph, Shutter, ISO MIN, ND 0).
 
 V13 : ajout de l'ISO dans la bulle Caméra sur la même ligne que Diaph / Shutter / Distance, et bulle Caméra repliable avec résumé visible de la caméra utilisée même lorsqu'elle est fermée.
+
+V14 : LIGHT utilise désormais Diaph + Shutter + ISO MIN/MAX de la bulle Caméra. Si l ISO théorique est sous ISO MIN, l app propose ISO MIN + ND requis ; au-dessus d ISO MAX, elle indique le manque de lumière en stops.
