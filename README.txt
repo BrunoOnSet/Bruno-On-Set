@@ -61,3 +61,5 @@ V13 : ajout de l'ISO dans la bulle Caméra sur la même ligne que Diaph / Shutte
 V14 : LIGHT utilise désormais Diaph + Shutter + ISO MIN/MAX de la bulle Caméra. Si l ISO théorique est sous ISO MIN, l app propose ISO MIN + ND requis ; au-dessus d ISO MAX, elle indique le manque de lumière en stops.
 
 V15 : module EXPO reconstruit sur le visuel et le workflow de la bulle CALCUL de BOS EXPO V3.42. La référence n'est plus répétée dans EXPO : elle vient de la bulle Caméra. Quatre cartes Diaph / ISO / Shutter / ND, cadenas ronds, bouton = RÉF., résumé d'exposition. Les priorités BOS existantes sont conservées.
+
+V16 : correction de la priorité EXPO (Assombrir : Diaph → ISO → ND → Shutter ; Éclaircir : Diaph → ND → ISO → Shutter) et alignement global de la DA sur BOS EXPO V3.43.

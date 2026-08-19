@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v15';
+const STORAGE_KEY = 'bos-cockpit-v16';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -343,7 +343,7 @@ function renderBody(id){
       </div>
       <div class="expo-calc-grid">${['aperture','iso','shutter','nd'].map(renderExpoCalcItem).join('')}</div>
     </div>
-    <div class="expo-priority-note">Assombrir : ISO ↓ → ND ↑ → Shutter → Diaph · Éclaircir : ND ↓ → ISO ↑ → Shutter → Diaph.</div>
+    <div class="expo-priority-note">Assombrir : Diaph ↑ → ISO ↓ → ND ↑ → Shutter · Éclaircir : Diaph ↓ → ND ↓ → ISO ↑ → Shutter.</div>
     ${warn?`<div class="expo-warning">${warnText}</div>`:`<div class="expo-calc-summary ${expoCalcResidualClass()}">${expoCalcSummary()}</div>`}
     ${appLink(id)}`;
   }
@@ -432,9 +432,10 @@ function exposureStop(k,v){
 function expoTotal(){ return exposureStop('aperture',state.expo.values.aperture)+exposureStop('iso',state.expo.values.iso)+exposureStop('shutter',state.expo.values.shutter)+exposureStop('nd',state.expo.values.nd); }
 function setExpoValue(k,v){ state.expo.values[k]=String(v); }
 function priorityForRemaining(remaining,changedKey){
-  const order=remaining<0?['iso','nd','shutter','aperture']:['nd','iso','shutter','aperture'];
+  const order=remaining<0?['aperture','iso','nd','shutter']:['aperture','nd','iso','shutter'];
   return order.filter(k=>k!==changedKey && !state.expo.locks[k]);
 }
+
 function directionalCandidates(key,remaining){
   const vals=valuesForKey(key);
   const cur=currentExpoValue(key),curStop=exposureStop(key,cur);
