@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v21';
+const STORAGE_KEY = 'bos-cockpit-v22';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -34,7 +34,7 @@ const defaultState = {
 };
 
 const moduleMeta = {
-  expo: ['EXPO', 'Compensation liée'],
+  expo: ['EXPO', 'Compensation Expo'],
   frame: ['FRAME', "Director's Viewfinder"],
   dof: ['DOF', 'Profondeur de champ'],
   light: ['LIGHT', 'Projecteurs et Lux'],

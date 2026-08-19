@@ -73,3 +73,5 @@ V19 : bouton PERSONNALISER déplacé entre l'entête et la bulle Caméra, et ent
 V20 : suppression du grand titre « Bruno OnSet » dans l’entête. L’entête conserve uniquement la ligne BOS / BRUNO ONSET et les contrôles, comme demandé.
 
 V21 : mise à jour des sous-titres de modules — EXPO : Compensation Expo ; FRAME : Director's Viewfinder ; LIGHT : Projecteurs et Lux.
+
+V22 : correction explicite des sous-titres : EXPO = Compensation Expo ; FRAME = Director's Viewfinder ; LIGHT = Projecteurs et Lux.
