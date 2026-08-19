@@ -59,3 +59,7 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 .expo-simple-row.limit-error>span{color:var(--danger);font-weight:800}
 #globalAperture.limit-error-value{opacity:1!important;color:var(--danger)!important;border-color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 8%,var(--input))!important;font-weight:800}
 @media(max-width:520px){.camera-settings-grid{grid-template-columns:1fr 1fr}.expo-aperture-mode{align-items:flex-start;flex-direction:column}.expo-aperture-mode .segmented{width:100%}.expo-aperture-mode .seg{flex:1}.iso-bounds{grid-template-columns:1fr 1fr!important}}
+
+.camera-limits-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.camera-limits-grid label>span{font-weight:800;letter-spacing:.5px}
+@media(max-width:520px){.camera-limits-grid{grid-template-columns:1fr 1fr}}
