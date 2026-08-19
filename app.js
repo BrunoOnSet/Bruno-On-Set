@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v17';
+const STORAGE_KEY = 'bos-cockpit-v18';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -227,7 +227,7 @@ async function init(){
   setupTheme(); renderCameraSelect(); renderTopFocal(); renderGlobalCameraControls(); renderModules(); bindGlobal(); renderCustomize();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
-function setupTheme(){ document.documentElement.dataset.theme=state.theme; document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#090b0f':'#ffffff'; }
+function setupTheme(){ document.documentElement.dataset.theme=state.theme; document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#0B0C0E':'#F3F1EC'; const btn=document.getElementById('themeBtn'); if(btn) btn.textContent=state.theme==='dark'?'LIGHT':'DARK'; }
 function cameraBrand(c){ return String(c?.brand || c?.group || 'Autre').trim() || 'Autre'; }
 function cameraShortLabel(c){ const name=String(c?.name||c?.id||''),brand=String(c?.brand||'').trim(); return brand && name.toLowerCase().startsWith((brand+' ').toLowerCase()) ? name.slice(brand.length+1) : name; }
 function cameraBrands(){ const seen=new Set(),brands=[]; cameras.forEach(c=>{const brand=cameraBrand(c); if(!seen.has(brand)){seen.add(brand);brands.push(brand);}}); return brands; }
