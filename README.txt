@@ -67,3 +67,5 @@ V16 : correction de la priorité EXPO (Assombrir : Diaph → ISO → ND → Shut
 V17 : entête retravaillée pour se rapprocher visuellement de BOS EXPO (logo BOS en pastille, ligne Bruno OnSet, grand titre, bouton DARK en pastille), suppression de « COCKPIT », et titres de toutes les bulles en bleu BOS.
 
 V18 : bouton thème aligné sur le comportement d'EXPO (DARK en mode clair, LIGHT en mode sombre), bouton « PERSONNALISER » explicite à la place de l'icône, et suppression du sous-texte « Affichage et ordre du cockpit » dans le panneau de personnalisation.
+
+V19 : bouton PERSONNALISER déplacé entre l'entête et la bulle Caméra, et entête reprise au plus près du header de BOS EXPO V3.44 (mêmes tailles, espacements et style DARK/LIGHT).
