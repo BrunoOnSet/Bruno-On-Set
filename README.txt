@@ -53,3 +53,5 @@ V9 : Caméra devient le réglage global (focale, diaph, distance). DOF et LIGHT 
 V10 : ISO MIN/MAX déplacés dans la bulle Caméra, ajout DIAPH MIN/MAX, suppression du mode Diaph Manuel/Auto dans EXPO, et retour du Diaph comme réglage EXPO lié. Le diaph participe toujours en dernier recours à la compensation dans ses limites.
 
 V11 : ajout d’un cadenas indépendant devant Diaph / ISO / Shutter / ND dans EXPO. Un réglage verrouillé est figé, son champ est désactivé et il est totalement exclu de la compensation. Le verrou Diaph fige aussi le Diaph commun dans la bulle Caméra ; le verrou ISO fige également ses limites ISO MIN/MAX.
+
+V12 : ajout du Shutter dans la bulle Caméra, ligne compacte Diaph / Shutter / Distance, suppression de l’info ISO natif dans EXPO et ajout d’un RESET EXPO vers la référence Caméra (Diaph, Shutter, ISO MIN, ND 0).

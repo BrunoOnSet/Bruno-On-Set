@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'bos-cockpit-v11';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v12';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -17,6 +17,7 @@ const defaultState = {
   cameraId: 'fx6',
   focal: 35,
   aperture: 2.8,
+  cameraShutter: '1/50',
   distanceCm: 250,
   layout: ['expo', 'frame', 'dof', 'light', 'media'],
   visible: { expo: true, frame: true, dof: true, light: true, media: true },
@@ -25,7 +26,7 @@ const defaultState = {
   light: { fixture: 'cob200xs' },
   cameraLimits: { isoMin: '800', isoMax: '51200', apertureMin: '1.0', apertureMax: '22' },
   expo: {
-    values: { iso: '800', shutter: '1/50', nd: '0' },
+    values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
     locks: { aperture: false, iso: false, shutter: false, nd: false },
     limitWarning: null
   }
@@ -73,10 +74,12 @@ function loadState(){
 function normalizeState(){
   state.focal = Math.max(1, Number(state.focal) || 35);
   state.aperture = Number(state.aperture) || 2.8;
+  if(!state.cameraShutter) state.cameraShutter = '1/50';
   state.distanceCm = Math.max(10, Number(state.distanceCm) || 250);
   if(!state.media.unit) state.media.unit = 'Mb/s';
   if(!state.expo) state.expo = clone(defaultState.expo);
   if(!state.expo.values) state.expo.values = clone(defaultState.expo.values);
+  if(!state.expo.values.aperture) state.expo.values.aperture = String(state.aperture);
   if(!state.expo.values.iso) state.expo.values.iso = '800';
   if(!state.expo.values.shutter) state.expo.values.shutter = '1/50';
   if(state.expo.values.nd === undefined) state.expo.values.nd = '0';
@@ -213,6 +216,8 @@ async function init(){
   if(!cameras.some(c=>c.id===state.cameraId)) state.cameraId=cameras[0]?.id || 'ff';
   if(Number(state.cameraLimits.isoMin) > Number(state.cameraLimits.isoMax)) state.cameraLimits.isoMax=state.cameraLimits.isoMin;
   if(Number(state.cameraLimits.apertureMin) > Number(state.cameraLimits.apertureMax)) state.cameraLimits.apertureMax=state.cameraLimits.apertureMin;
+  const baseApertureVals=apertureRangeValues();
+  if(baseApertureVals.length && !baseApertureVals.includes(String(state.aperture))) state.aperture=Number(baseApertureVals[0]);
   clampApertureToRange(false);
   clampIsoToRange();
   setupTheme(); renderCameraSelect(); renderTopFocal(); renderGlobalCameraControls(); renderModules(); bindGlobal(); renderCustomize();
@@ -247,31 +252,28 @@ function apertureRangeValues(){
 function clampApertureToRange(compensate=true){
   const vals=apertureRangeValues();
   if(!vals.length) return;
-  const cur=Number(state.aperture);
+  const cur=Number(state.expo.values.aperture);
   const best=vals.reduce((a,b)=>Math.abs(Number(b)-cur)<Math.abs(Number(a)-cur)?b:a,vals[0]);
-  if(String(state.aperture)===String(best)) return;
+  if(String(state.expo.values.aperture)===String(best)) return;
   if(compensate){
     const before=expoTotal();
-    state.aperture=Number(best);
+    state.expo.values.aperture=String(best);
     applyLinkedCompensation(before,'aperture');
-  }else state.aperture=Number(best);
+  }else state.expo.values.aperture=String(best);
 }
 function renderGlobalCameraControls(){
   const f=document.getElementById('focalInput'); if(f) f.value=state.focal;
-  const apertureLocked=!!state.expo.locks.aperture;
-  const isoLocked=!!state.expo.locks.iso;
-  const a=document.getElementById('globalAperture'); if(a){ a.innerHTML=optionList(apertureRangeValues(),state.aperture,'f/'); a.value=String(state.aperture); a.disabled=apertureLocked; a.title=apertureLocked?'Diaph verrouillé dans EXPO':''; }
+  const a=document.getElementById('globalAperture'); if(a){ a.innerHTML=optionList(apertureRangeValues(),state.aperture,'f/'); a.value=String(state.aperture); }
+  const sh=document.getElementById('globalShutter'); if(sh){ sh.innerHTML=optionList(shutters,state.cameraShutter); sh.value=String(state.cameraShutter); }
   const d=document.getElementById('globalDistance'); if(d) d.value=state.distanceCm;
-  const imin=document.getElementById('globalIsoMin'); if(imin){imin.innerHTML=optionList(isos,state.cameraLimits.isoMin,'ISO ');imin.value=state.cameraLimits.isoMin;imin.disabled=isoLocked;imin.title=isoLocked?'ISO verrouillé dans EXPO':'';}
-  const imax=document.getElementById('globalIsoMax'); if(imax){imax.innerHTML=optionList(isos,state.cameraLimits.isoMax,'ISO ');imax.value=state.cameraLimits.isoMax;imax.disabled=isoLocked;imax.title=isoLocked?'ISO verrouillé dans EXPO':'';}
-  const amin=document.getElementById('globalApertureMin'); if(amin){amin.innerHTML=optionList(apertures,state.cameraLimits.apertureMin,'f/');amin.value=state.cameraLimits.apertureMin;amin.disabled=apertureLocked;amin.title=apertureLocked?'Diaph verrouillé dans EXPO':'';}
-  const amax=document.getElementById('globalApertureMax'); if(amax){amax.innerHTML=optionList(apertures,state.cameraLimits.apertureMax,'f/');amax.value=state.cameraLimits.apertureMax;amax.disabled=apertureLocked;amax.title=apertureLocked?'Diaph verrouillé dans EXPO':'';}
+  const imin=document.getElementById('globalIsoMin'); if(imin){imin.innerHTML=optionList(isos,state.cameraLimits.isoMin,'ISO ');imin.value=state.cameraLimits.isoMin;}
+  const imax=document.getElementById('globalIsoMax'); if(imax){imax.innerHTML=optionList(isos,state.cameraLimits.isoMax,'ISO ');imax.value=state.cameraLimits.isoMax;}
+  const amin=document.getElementById('globalApertureMin'); if(amin){amin.innerHTML=optionList(apertures,state.cameraLimits.apertureMin,'f/');amin.value=state.cameraLimits.apertureMin;}
+  const amax=document.getElementById('globalApertureMax'); if(amax){amax.innerHTML=optionList(apertures,state.cameraLimits.apertureMax,'f/');amax.value=state.cameraLimits.apertureMax;}
   syncGlobalLimitState();
 }
 function syncGlobalLimitState(){
-  const a=document.getElementById('globalAperture');
-  const isError=state.expo.limitWarning?.key==='aperture';
-  if(a) a.classList.toggle('limit-error-value',!!isError);
+  /* Les alertes de limite appartiennent uniquement au module EXPO. */
 }
 function bindGlobal(){
   document.getElementById('cameraBrandMode').addEventListener('click',e=>{const btn=e.target.closest('[data-camerabrand]'); if(!btn)return; const brand=btn.dataset.camerabrand,remembered=getLastCameraForBrand(brand),first=camerasForBrand(brand)[0]; if(remembered)applyCameraSelection(remembered); else if(first)applyCameraSelection(first.id);});
@@ -279,6 +281,7 @@ function bindGlobal(){
   document.getElementById('focalInput').addEventListener('input',e=>{state.focal=Math.max(1,Number(e.target.value)||35); save(); renderTopFocal(); updateLive();});
   document.getElementById('focalPresets').addEventListener('click',e=>{const btn=e.target.closest('[data-focalpreset]'); if(!btn)return; state.focal=Number(btn.dataset.focalpreset); document.getElementById('focalInput').value=state.focal; save(); renderTopFocal(); updateLive();});
   document.getElementById('globalAperture').addEventListener('change',e=>globalApertureChanged(e.target.value));
+  document.getElementById('globalShutter').addEventListener('change',e=>globalShutterChanged(e.target.value));
   document.getElementById('globalDistance').addEventListener('input',e=>{state.distanceCm=Math.max(10,Number(e.target.value)||10); save(); updateDOF();});
   document.getElementById('globalIsoMin').addEventListener('change',e=>changeIsoBound('min',e.target.value));
   document.getElementById('globalIsoMax').addEventListener('change',e=>changeIsoBound('max',e.target.value));
@@ -296,17 +299,16 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div><div class="warning">Aperçu relatif V11 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>${appLink(id)}`;
+  if(id==='frame') return `<div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div><div class="warning">Aperçu relatif V12 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div><div class="luxgrid"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
   if(id==='expo'){
-    const info=currentExposureInfo();
     const warn=state.expo.limitWarning;
     const warnText=warn?(warn.reason==='locked'
       ?`Correction impossible · les autres réglages disponibles sont verrouillés · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`
       :`Correction impossible · ${expoLabel(warn.key)} limité à ${formatExpoValue(warn.key,currentExpoValue(warn.key))} · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`):'';
-    return `<div class="expo-info"><div><strong>${info.label}</strong><span>${esc(info.display)}</span></div><small>${esc(currentCamera()?.exposure?.mode||'')}</small></div>
+    return `<div class="expo-toolbar"><button type="button" id="expoResetBtn" class="secondary expo-reset-btn">↺ RESET</button></div>
       <div class="expo-simple-rows">${['aperture','iso','shutter','nd'].map(renderExpoRow).join('')}</div>
       ${warn?`<div class="expo-warning">${warnText}</div>`:`<div class="base-note">🔒 exclut totalement un réglage de la compensation.<br>Assombrir : ISO ↓ → ND ↑ → Shutter → Diaph.<br>Éclaircir : ND ↓ → ISO ↑ → Shutter → Diaph.</div>`}
       ${appLink(id)}`;
@@ -314,12 +316,12 @@ function renderBody(id){
   return '';
 }
 function expoLabel(k){ return {aperture:'Diaph',iso:'ISO',shutter:'Shutter',nd:'ND'}[k]; }
-function currentExpoValue(k){ return k==='aperture'?String(state.aperture):String(state.expo.values[k]); }
+function currentExpoValue(k){ return String(state.expo.values[k]); }
 function formatExpoValue(k,v){ return k==='aperture'?`f/${v}`:(k==='nd'?`ND ${v}`:String(v)); }
 function valuesForKey(k){
   if(k==='aperture'){
     const vals=apertureRangeValues();
-    const cur=String(state.aperture);
+    const cur=String(state.expo.values.aperture);
     return state.expo.locks.aperture && !vals.includes(cur) ? [...vals,cur].sort((a,b)=>Number(a)-Number(b)) : vals;
   }
   if(k==='iso'){
@@ -346,6 +348,7 @@ function bindModules(){
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
+  const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
   document.querySelectorAll('[data-expolock]').forEach(b=>b.addEventListener('click',()=>toggleExpoLock(b.dataset.expolock)));
   document.querySelectorAll('[data-expokey]').forEach(s=>s.addEventListener('change',e=>expoChanged(e.target.dataset.expokey,e.target.value)));
   document.querySelectorAll('[data-applink]').forEach(b=>b.addEventListener('click',()=>{const u=APP_LINKS[b.dataset.applink];if(u&&u!=='#')location.href=u;}));
@@ -359,8 +362,8 @@ function exposureStop(k,v){
   if(k==='nd') return -Number(v)/0.3;
   return 0;
 }
-function expoTotal(){ return exposureStop('aperture',state.aperture)+exposureStop('iso',state.expo.values.iso)+exposureStop('shutter',state.expo.values.shutter)+exposureStop('nd',state.expo.values.nd); }
-function setExpoValue(k,v){ if(k==='aperture') state.aperture=Number(v); else state.expo.values[k]=String(v); }
+function expoTotal(){ return exposureStop('aperture',state.expo.values.aperture)+exposureStop('iso',state.expo.values.iso)+exposureStop('shutter',state.expo.values.shutter)+exposureStop('nd',state.expo.values.nd); }
+function setExpoValue(k,v){ state.expo.values[k]=String(v); }
 function priorityForRemaining(remaining,changedKey){
   const order=remaining<0?['iso','nd','shutter','aperture']:['nd','iso','shutter','aperture'];
   return order.filter(k=>k!==changedKey && !state.expo.locks[k]);
@@ -423,9 +426,9 @@ function toggleExpoLock(key){
       clampIsoToRange();
       if(state.expo.values.iso!==old) applyLinkedCompensation(before,'iso');
     }else if(key==='aperture'){
-      const old=String(state.aperture);
+      const old=String(state.expo.values.aperture);
       clampApertureToRange(false);
-      if(String(state.aperture)!==old) applyLinkedCompensation(before,'aperture');
+      if(String(state.expo.values.aperture)!==old) applyLinkedCompensation(before,'aperture');
     }
   }
   save();
@@ -433,12 +436,24 @@ function toggleExpoLock(key){
   renderModules();
 }
 function globalApertureChanged(newVal){
-  if(state.expo.locks.aperture) return;
-  const before=expoTotal();
   state.aperture=Number(newVal);
+  state.expo.values.aperture=String(newVal);
   state.expo.limitWarning=null;
-  applyLinkedCompensation(before,'aperture');
   save(); renderGlobalCameraControls(); renderModules();
+}
+function globalShutterChanged(newVal){
+  state.cameraShutter=String(newVal);
+  state.expo.values.shutter=String(newVal);
+  state.expo.limitWarning=null;
+  save(); renderGlobalCameraControls(); renderModules();
+}
+function resetExpoToCameraBase(){
+  state.expo.values.aperture=String(state.aperture);
+  state.expo.values.shutter=String(state.cameraShutter);
+  state.expo.values.iso=String(state.cameraLimits.isoMin);
+  state.expo.values.nd='0';
+  state.expo.limitWarning=null;
+  save(); renderModules();
 }
 function expoChanged(key,newVal){
   if(state.expo.locks[key]) return;
@@ -472,10 +487,15 @@ function changeApertureBound(which,newVal){
     state.cameraLimits.apertureMax=String(newVal);
     if(Number(state.cameraLimits.apertureMax)<Number(state.cameraLimits.apertureMin)) state.cameraLimits.apertureMin=state.cameraLimits.apertureMax;
   }
-  const oldAperture=String(state.aperture);
+  const vals=apertureRangeValues();
+  if(vals.length && !vals.includes(String(state.aperture))){
+    const cur=Number(state.aperture);
+    state.aperture=Number(vals.reduce((a,b)=>Math.abs(Number(b)-cur)<Math.abs(Number(a)-cur)?b:a,vals[0]));
+  }
+  const oldExpo=String(state.expo.values.aperture);
   clampApertureToRange(false);
   state.expo.limitWarning=null;
-  if(String(state.aperture)!==oldAperture) applyLinkedCompensation(before,'aperture');
+  if(String(state.expo.values.aperture)!==oldExpo) applyLinkedCompensation(before,'aperture');
   save(); renderGlobalCameraControls(); renderModules();
 }
 
