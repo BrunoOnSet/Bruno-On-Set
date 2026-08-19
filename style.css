@@ -175,3 +175,28 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
   .topbar{margin-bottom:14px}
   .expo-calc-grid{grid-template-columns:1fr 1fr}
 }
+
+
+/* V17 — entête alignée sur EXPO + titres de bulles en bleu */
+.topbar{padding:14px 16px 16px;border-radius:22px}
+.bos-top-inner{width:100%;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.bos-top-title{display:flex;flex-direction:column;gap:8px}
+.tool-eyebrow,.bos-tool-eyebrow{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.12em;font-weight:850}
+.eyebrow-logo{display:inline-flex;align-items:center;justify-content:center;min-width:48px;height:28px;padding:0 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--blue);font-weight:900;letter-spacing:.06em}
+.eyebrow-brand{font-size:13px;letter-spacing:.18em;font-weight:900;color:var(--text)}
+.bos-letter{color:var(--blue)}
+.bos-top-title h1{margin:0;font-size:24px;line-height:1;font-weight:900;letter-spacing:-.03em;color:var(--text)}
+.bos-top-actions{display:flex;gap:8px;align-items:flex-start}
+.mode-btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:0 14px;min-height:36px;font-size:11px;letter-spacing:.14em;font-weight:900;cursor:pointer}
+.mode-btn-icon{min-width:36px;padding:0;display:grid;place-items:center;font-size:16px;letter-spacing:0}
+.brand,.brandtext,.bosmark{display:none!important}
+.module-title strong,.context-head .module-title strong{color:var(--blue)!important}
+.module-title small{color:var(--muted)}
+@media(max-width:560px){
+  .topbar{padding:12px 14px 14px}
+  .eyebrow-logo{min-width:44px;height:26px;padding:0 10px;font-size:11px}
+  .eyebrow-brand{font-size:12px;letter-spacing:.16em}
+  .bos-top-title h1{font-size:20px}
+  .mode-btn{min-height:34px;padding:0 12px;font-size:10px}
+  .mode-btn-icon{min-width:34px}
+}

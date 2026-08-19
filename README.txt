@@ -63,3 +63,5 @@ V14 : LIGHT utilise désormais Diaph + Shutter + ISO MIN/MAX de la bulle Caméra
 V15 : module EXPO reconstruit sur le visuel et le workflow de la bulle CALCUL de BOS EXPO V3.42. La référence n'est plus répétée dans EXPO : elle vient de la bulle Caméra. Quatre cartes Diaph / ISO / Shutter / ND, cadenas ronds, bouton = RÉF., résumé d'exposition. Les priorités BOS existantes sont conservées.
 
 V16 : correction de la priorité EXPO (Assombrir : Diaph → ISO → ND → Shutter ; Éclaircir : Diaph → ND → ISO → Shutter) et alignement global de la DA sur BOS EXPO V3.43.
+
+V17 : entête retravaillée pour se rapprocher visuellement de BOS EXPO (logo BOS en pastille, ligne Bruno OnSet, grand titre, bouton DARK en pastille), suppression de « COCKPIT », et titres de toutes les bulles en bleu BOS.
