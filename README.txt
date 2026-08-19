@@ -46,3 +46,6 @@ V6 — BOS-PROJECTEURS-DB partagé
 V7 : BOS-CAMERA-DB devient la source principale des caméras via GitHub. data/cameras.json est conservé uniquement comme fallback local/hors connexion. Tous les modules de Bruno OnSet (sélection caméra, EXPO, DOF, FRAME, MEDIA) utilisent la même liste chargée depuis cette DB commune. Le service worker applique un mode network-first aux Camera DB et Projecteurs DB.
 
 V8 : EXPO signale désormais une compensation impossible. Le réglage Auto arrivé à sa limite conserve sa valeur limite mais celle-ci passe en rouge, avec le nombre de stops restant non compensés.
+
+
+V9 : Caméra devient le réglage global (focale, diaph, distance). DOF et LIGHT consomment ces valeurs sans les redemander. EXPO abandonne M/A par ligne : ISO/Shutter/ND sont liés et compensent selon une priorité directionnelle. Ajout Diaph Manuel/Auto + ISO MIN/MAX libres.

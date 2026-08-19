@@ -44,3 +44,18 @@ button,input,select{font:inherit;color:inherit}.shell{width:min(760px,100%);marg
 .expo-row.limit-error .expo-control>span{color:var(--danger);font-weight:800}
 .expo-row select.limit-error-value,.expo-row select.limit-error-value:disabled{opacity:1!important;color:var(--danger)!important;border-color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 8%,var(--input))!important;font-weight:800}
 .expo-warning{margin-top:9px;border:1px solid color-mix(in srgb,var(--danger) 45%,var(--line));background:color-mix(in srgb,var(--danger) 8%,var(--panel2));color:var(--danger);border-radius:12px;padding:9px 10px;font-size:11px;font-weight:700;line-height:1.4}
+
+
+/* V9 — réglages caméra globaux + EXPO lié */
+.camera-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.dof-only{margin-top:0}
+.expo-aperture-mode{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:10px 11px;margin-bottom:11px}
+.expo-aperture-mode>div:first-child strong{display:block;font-size:12px}
+.expo-aperture-mode>div:first-child small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.iso-bounds{margin-bottom:11px}
+.iso-bounds label>span{font-weight:800;letter-spacing:.5px}
+.expo-simple-rows{display:flex;flex-direction:column;gap:9px}
+.expo-simple-row>span{font-size:11px;color:var(--muted);margin:0 0 6px 2px;display:block}
+.expo-simple-row.limit-error>span{color:var(--danger);font-weight:800}
+#globalAperture.limit-error-value{opacity:1!important;color:var(--danger)!important;border-color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 8%,var(--input))!important;font-weight:800}
+@media(max-width:520px){.camera-settings-grid{grid-template-columns:1fr 1fr}.expo-aperture-mode{align-items:flex-start;flex-direction:column}.expo-aperture-mode .segmented{width:100%}.expo-aperture-mode .seg{flex:1}.iso-bounds{grid-template-columns:1fr 1fr!important}}
