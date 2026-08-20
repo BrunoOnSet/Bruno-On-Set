@@ -75,3 +75,13 @@ V20 : suppression du grand titre « Bruno OnSet » dans l’entête. L’entête
 V21 : mise à jour des sous-titres de modules — EXPO : Compensation Expo ; FRAME : Director's Viewfinder ; LIGHT : Projecteurs et Lux.
 
 V22 : correction explicite des sous-titres : EXPO = Compensation Expo ; FRAME = Director's Viewfinder ; LIGHT = Projecteurs et Lux.
+
+
+V23 :
+- EXPO passe en dernier par défaut, fermé, avec le sous-titre « BIENTÔT DISPONIBLE » et sans calcul actif dans le cockpit.
+- Ajout du module PLAN.
+- Lecture directe de la bibliothèque locale BOS PLAN (`bos-plan-feu-library-v06`) quand elle est accessible.
+- Navigation entre plusieurs plans directement dans Bruno OnSet (liste + boutons précédent/suivant).
+- Aperçu simplifié du plan vu du dessus, avec caméras, sujets, projecteurs, faisceaux et décor.
+- Bouton ACTUALISER pour relire la bibliothèque PLAN.
+- Bouton IMPORTER comme solution de secours pour des fichiers `.bosplan.json`; plusieurs fichiers peuvent être importés et restent navigables dans Bruno OnSet.

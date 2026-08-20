@@ -234,3 +234,30 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 /* V20 — entête compact : suppression du grand titre Bruno OnSet */
 .bos-top-title{gap:0}
 .topbar{padding-top:14px;padding-bottom:14px}
+
+
+/* V23 — module PLAN + EXPO en attente */
+.plan-nav-row{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:8px;align-items:end}
+.plan-select-label{min-width:0}.plan-select-label select{font-weight:850}
+.plan-nav-btn{width:38px;height:46px;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:14px;font-size:25px;line-height:1;cursor:pointer}
+.plan-nav-btn:active{transform:scale(.96)}
+.plan-meta{display:flex;justify-content:space-between;gap:10px;margin:9px 2px 8px;color:var(--muted);font-size:9px;letter-spacing:.08em;font-weight:800;text-transform:uppercase}
+.plan-preview-wrap{overflow:hidden;border:1px solid var(--card-border);border-radius:16px;background:var(--input)}
+.plan-mini-svg{display:block;width:100%;height:auto;aspect-ratio:1.61/1;background:var(--input)}
+.plan-stage-bg{fill:var(--input)}
+.plan-grid-small{stroke:color-mix(in srgb,var(--muted) 18%,transparent);stroke-width:1}
+.plan-grid-big{stroke:color-mix(in srgb,var(--muted) 32%,transparent);stroke-width:1.4}
+.plan-camera-fov{fill:color-mix(in srgb,var(--blue) 10%,transparent);stroke:color-mix(in srgb,var(--blue) 42%,transparent);stroke-width:1.5}
+.plan-light-beam{fill:rgba(244,206,100,.12);stroke:rgba(201,159,40,.38);stroke-width:1.4}
+:root[data-theme="dark"] .plan-light-beam{fill:rgba(255,218,120,.12);stroke:rgba(255,218,120,.34)}
+.plan-object{vector-effect:non-scaling-stroke}.plan-subject circle,.plan-subject path{fill:var(--text);stroke:var(--text)}
+.plan-camera rect,.plan-camera polygon{fill:var(--panel);stroke:var(--blue);stroke-width:3}
+.plan-light circle{fill:var(--panel);stroke:#B58A20;stroke-width:3}.plan-light line{stroke:#B58A20;stroke-width:3}
+.plan-wall{fill:var(--text);opacity:.82}.plan-window{fill:#9CC8D2;stroke:#5B8E99;stroke-width:2}.plan-door{fill:#C6A47A;stroke:#8C6D48;stroke-width:2}.plan-decor{fill:var(--panel2);stroke:var(--muted);stroke-width:2}
+.plan-accessory{fill:var(--panel2);stroke:var(--blue);stroke-width:2;stroke-dasharray:7 5}
+.plan-mini-label{fill:var(--text);font-size:15px;font-weight:800;paint-order:stroke;stroke:var(--input);stroke-width:4px;stroke-linejoin:round}
+.plan-caption{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 2px 0}.plan-caption strong{font-size:13px}.plan-caption span{font-size:10px;color:var(--muted);text-align:right}
+.plan-actions{display:flex;gap:8px;margin-top:11px}.plan-action-btn{flex:1;min-height:34px;padding:7px 10px;font-size:9px;letter-spacing:.1em}
+.plan-empty{border:1px dashed var(--line);border-radius:16px;padding:18px;text-align:center;background:var(--panel2)}.plan-empty strong{display:block;font-size:14px}.plan-empty span{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:6px}
+.coming-soon{border:1px solid var(--card-border);border-radius:16px;background:var(--panel2);padding:18px;text-align:center}.coming-soon strong{display:block;color:var(--blue);font-size:11px;letter-spacing:.16em}.coming-soon span{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:7px}
+@media(max-width:520px){.plan-nav-row{grid-template-columns:36px minmax(0,1fr) 36px}.plan-nav-btn{width:36px}.plan-caption{flex-direction:column;gap:3px}.plan-caption span{text-align:left}}

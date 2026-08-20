@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v22';
+const STORAGE_KEY = 'bos-cockpit-v23';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -6,6 +6,9 @@ const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEU
 const LIGHT_DB_FALLBACK_URL = 'data/lights.json';
 const LAST_CAMERA_BY_BRAND_KEY = 'bos-onset-last-camera-by-brand';
 const FOCAL_PRESETS = [18,24,28,35,50,85,105,135];
+const PLAN_LIBRARY_KEY = 'bos-plan-feu-library-v06';
+const PLAN_CURRENT_KEY = 'bos-plan-feu-v06-current';
+const ONSET_PLAN_IMPORT_KEY = 'bos-onset-plan-imports-v01';
 
 const apertures = ['1.0','1.2','1.4','1.8','2.0','2.8','4','5.6','8','11','16','22'];
 const isos = ['100','125','160','200','250','320','400','500','640','800','1000','1250','1600','2000','2500','3200','4000','5000','6400','8000','10000','12800','16000','20000','25600','32000','40000','51200'];
@@ -20,11 +23,12 @@ const defaultState = {
   cameraShutter: '1/50',
   cameraIso: '800',
   distanceCm: 250,
-  layout: ['expo', 'frame', 'dof', 'light', 'media'],
-  visible: { expo: true, frame: true, dof: true, light: true, media: true },
-  open: { expo: true, frame: true, dof: true, light: false, media: false },
+  layout: ['frame', 'dof', 'light', 'media', 'plan', 'expo'],
+  visible: { frame: true, dof: true, light: true, media: true, plan: true, expo: true },
+  open: { frame: true, dof: true, light: false, media: false, plan: true, expo: false },
   media: { bitrate: 250, unit: 'Mb/s', card: 256 },
   light: { fixture: 'cob200xs' },
+  plan: { selectedId: null },
   cameraLimits: { isoMin: '800', isoMax: '51200', apertureMin: '1.0', apertureMax: '22' },
   expo: {
     values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
@@ -34,13 +38,14 @@ const defaultState = {
 };
 
 const moduleMeta = {
-  expo: ['EXPO', 'Compensation Expo'],
   frame: ['FRAME', "Director's Viewfinder"],
   dof: ['DOF', 'Profondeur de champ'],
   light: ['LIGHT', 'Projecteurs et Lux'],
-  media: ['MEDIA', 'Temps d’enregistrement']
+  media: ['MEDIA', 'Temps d’enregistrement'],
+  plan: ['PLAN', 'Plans de feu'],
+  expo: ['EXPO', 'BIENTÔT DISPONIBLE']
 };
-const APP_LINKS = { expo: '#', frame: '#', dof: '#', light: '#', media: '#' };
+const APP_LINKS = { frame: '#', dof: '#', light: '#', media: '#', plan: '#', expo: '#' };
 
 let cameras = [];
 let cameraDatabaseSource = 'none';
@@ -94,6 +99,18 @@ function normalizeState(){
   if(!state.expo.locks) state.expo.locks = clone(defaultState.expo.locks);
   for(const k of ['aperture','iso','shutter','nd']) state.expo.locks[k] = !!state.expo.locks[k];
   if(state.expo.limitWarning === undefined) state.expo.limitWarning = null;
+  if(!state.plan || typeof state.plan !== 'object') state.plan = clone(defaultState.plan);
+  if(state.plan.selectedId === undefined) state.plan.selectedId = null;
+  const validModules = defaultState.layout;
+  if(!Array.isArray(state.layout)) state.layout = clone(validModules);
+  state.layout = state.layout.filter(id => validModules.includes(id));
+  for(const id of validModules) if(!state.layout.includes(id)) state.layout.push(id);
+  if(!state.visible || typeof state.visible !== 'object') state.visible = clone(defaultState.visible);
+  if(!state.open || typeof state.open !== 'object') state.open = clone(defaultState.open);
+  for(const id of validModules){
+    if(state.visible[id] === undefined) state.visible[id] = defaultState.visible[id];
+    if(state.open[id] === undefined) state.open[id] = defaultState.open[id];
+  }
 }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function esc(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
@@ -135,6 +152,149 @@ function luxAtDistance(fixture, targetM){
   if(exact) return {lux:exact.lux, exact:true, sourceDistance:exact.distance};
   const nearest = points.reduce((a,b) => Math.abs(Math.log(b.distance/targetM)) < Math.abs(Math.log(a.distance/targetM)) ? b : a);
   return {lux:nearest.lux*Math.pow(nearest.distance/targetM,2), exact:false, sourceDistance:nearest.distance};
+}
+
+
+function readImportedPlans(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(ONSET_PLAN_IMPORT_KEY)||'[]');
+    return Array.isArray(raw)?raw:[];
+  }catch(_){ return []; }
+}
+function writeImportedPlans(plans){
+  try{ localStorage.setItem(ONSET_PLAN_IMPORT_KEY,JSON.stringify(plans)); }catch(e){ console.warn('BOS PLAN imports',e); }
+}
+function readPlanRecords(){
+  const out=[];
+  try{
+    const lib=JSON.parse(localStorage.getItem(PLAN_LIBRARY_KEY)||'null');
+    if(lib&&Array.isArray(lib.plans)){
+      lib.plans.forEach((rec,i)=>{
+        if(rec?.state&&Array.isArray(rec.state.objects)) out.push({
+          key:`plan:${rec.id||i}`,id:rec.id||`plan_${i}`,name:rec.name||rec.state.planName||`Plan ${i+1}`,
+          folderId:rec.folderId||'',updatedAt:Number(rec.updatedAt)||0,state:rec.state,source:'PLAN'
+        });
+      });
+    }
+  }catch(e){ console.warn('Bibliothèque PLAN illisible',e); }
+  if(!out.length){
+    try{
+      const cur=JSON.parse(localStorage.getItem(PLAN_CURRENT_KEY)||'null');
+      if(cur&&Array.isArray(cur.objects)) out.push({key:`current:${cur.planId||'current'}`,id:cur.planId||'current',name:cur.planName||'Plan actuel',folderId:cur.folderId||'',updatedAt:0,state:cur,source:'PLAN · actuel'});
+    }catch(_){ }
+  }
+  readImportedPlans().forEach((rec,i)=>{
+    if(rec?.state&&Array.isArray(rec.state.objects)) out.push({
+      key:`import:${rec.id||i}`,id:rec.id||`import_${i}`,name:rec.name||rec.state.planName||`Plan importé ${i+1}`,
+      folderId:rec.folderId||'',updatedAt:Number(rec.updatedAt)||0,state:rec.state,source:'Import'
+    });
+  });
+  const seen=new Set();
+  return out.filter(rec=>{const sig=`${rec.source}:${rec.id}`;if(seen.has(sig))return false;seen.add(sig);return true;})
+    .sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)||String(a.name).localeCompare(String(b.name),'fr'));
+}
+function selectedPlanRecord(records=readPlanRecords()){
+  if(!records.length) return null;
+  let rec=records.find(r=>r.key===state.plan.selectedId);
+  if(!rec){ rec=records[0]; state.plan.selectedId=rec.key; save(); }
+  return rec;
+}
+function planModuleSubtitle(){
+  const rec=selectedPlanRecord();
+  return rec?rec.name:'Plans de feu';
+}
+function n(v,fallback=0){ const x=Number(v); return Number.isFinite(x)?x:fallback; }
+function planPreviewSvg(rec){
+  const ps=rec?.state||{}, objects=Array.isArray(ps.objects)?ps.objects:[];
+  const w=Math.max(400,Math.round(Math.max(4,Math.min(30,n(ps.planLength,10)))*100)), h=Math.round(w*.62);
+  const parts=[`<svg class="plan-mini-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Aperçu du plan ${esc(rec?.name||'')}">`,
+    `<defs><pattern id="planGrid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" class="plan-grid-small" fill="none"/></pattern><pattern id="planGridBig" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#planGrid)"/><path d="M 100 0 L 0 0 0 100" class="plan-grid-big" fill="none"/></pattern></defs>`,
+    `<rect width="${w}" height="${h}" class="plan-stage-bg"/><rect width="${w}" height="${h}" fill="url(#planGridBig)"/>`];
+  const beams=ps.beamsVisible!==false;
+  for(const o of objects){
+    const x=n(o.x,w/2),y=n(o.y,h/2),rot=n(o.rot,0);
+    if(o.kind==='camera'){
+      const focal=Math.max(12,n(o.focal,50)),angle=Math.max(12,Math.min(95,2*Math.atan(36/(2*focal))*180/Math.PI)),len=Math.min(h*.65,300),half=Math.tan(angle*Math.PI/360)*len;
+      parts.push(`<polygon points="0,0 ${len},${-half} ${len},${half}" class="plan-camera-fov" transform="translate(${x} ${y}) rotate(${rot})"/>`);
+    }
+    if(o.kind==='light'&&beams&&o.beamVisible!==false){
+      const angle=Math.max(8,Math.min(120,n(o.beam,55))),len=Math.min(h*.62,290),half=Math.tan(angle*Math.PI/360)*len;
+      parts.push(`<polygon points="0,0 ${len},${-half} ${len},${half}" class="plan-light-beam" transform="translate(${x} ${y}) rotate(${rot})"/>`);
+    }
+  }
+  for(const o of objects){
+    const x=n(o.x,w/2),y=n(o.y,h/2),rot=n(o.rot,0),name=esc(o.name||o.short||'');
+    if(o.kind==='subject'){
+      parts.push(`<g transform="translate(${x} ${y}) rotate(${rot})" class="plan-object plan-subject"><circle r="14"/><path d="M-18,8 Q0,-2 18,8 L15,29 L-15,29 Z"/></g>`);
+    }else if(o.kind==='camera'){
+      parts.push(`<g transform="translate(${x} ${y}) rotate(${rot})" class="plan-object plan-camera"><rect x="-16" y="-11" width="27" height="22" rx="5"/><polygon points="11,-7 25,0 11,7"/></g>`);
+    }else if(o.kind==='light'){
+      parts.push(`<g transform="translate(${x} ${y}) rotate(${rot})" class="plan-object plan-light"><circle r="13"/><line x1="13" y1="0" x2="24" y2="0"/></g>`);
+    }else if(o.kind==='decor'){
+      const ww=Math.max(10,n(o.width,1)*100),hh=Math.max(8,n(o.height,.15)*100);
+      const cls=o.type==='wall'?'plan-wall':(o.type==='window'?'plan-window':(o.type==='door'?'plan-door':'plan-decor'));
+      parts.push(`<rect x="${-ww/2}" y="${-hh/2}" width="${ww}" height="${hh}" rx="${o.type==='table'?8:2}" class="plan-object ${cls}" transform="translate(${x} ${y}) rotate(${rot})"/>`);
+    }else if(o.kind==='accessory'){
+      const ww=Math.max(12,n(o.width,1)*70),hh=Math.max(8,n(o.height,1)*30);
+      parts.push(`<rect x="${-ww/2}" y="${-hh/2}" width="${ww}" height="${hh}" rx="3" class="plan-object plan-accessory" transform="translate(${x} ${y}) rotate(${rot})"/>`);
+    }
+    if(name && o.kind!=='decor') parts.push(`<text x="${x}" y="${y+43}" class="plan-mini-label" text-anchor="middle">${name}</text>`);
+  }
+  parts.push('</svg>');
+  return parts.join('');
+}
+function planStats(rec){
+  const objs=Array.isArray(rec?.state?.objects)?rec.state.objects:[];
+  const count=k=>objs.filter(o=>o.kind===k).length;
+  const bits=[];
+  if(count('camera')) bits.push(`${count('camera')} caméra${count('camera')>1?'s':''}`);
+  if(count('subject')) bits.push(`${count('subject')} sujet${count('subject')>1?'s':''}`);
+  if(count('light')) bits.push(`${count('light')} projecteur${count('light')>1?'s':''}`);
+  return bits.join(' · ')||`${objs.length} élément${objs.length>1?'s':''}`;
+}
+function renderPlanBody(){
+  const records=readPlanRecords(),rec=selectedPlanRecord(records);
+  if(!rec) return `<div class="plan-empty"><strong>Aucun plan disponible</strong><span>Sauvegarde un plan dans PLAN, puis reviens ici et touche ACTUALISER.</span></div>
+    <div class="plan-actions"><button type="button" class="secondary plan-action-btn" id="planRefreshBtn">ACTUALISER</button><button type="button" class="secondary plan-action-btn" id="planImportBtn">IMPORTER</button><input id="planImportInput" type="file" accept=".json,.bosplan.json,application/json" multiple hidden></div>
+    <div class="demo">Lecture automatique de la bibliothèque PLAN quand les deux apps partagent le même stockage. IMPORTER reste disponible comme solution de secours.</div>`;
+  const idx=records.findIndex(r=>r.key===rec.key);
+  return `<div class="plan-nav-row"><button type="button" class="plan-nav-btn" id="planPrevBtn" aria-label="Plan précédent">‹</button>
+    <label class="plan-select-label"><span>Plan</span><select id="planSelect">${records.map(r=>`<option value="${esc(r.key)}" ${r.key===rec.key?'selected':''}>${esc(r.name)}</option>`).join('')}</select></label>
+    <button type="button" class="plan-nav-btn" id="planNextBtn" aria-label="Plan suivant">›</button></div>
+    <div class="plan-meta"><span>${idx+1} / ${records.length}</span><span>${esc(rec.source)}</span></div>
+    <div class="plan-preview-wrap">${planPreviewSvg(rec)}</div>
+    <div class="plan-caption"><strong>${esc(rec.name)}</strong><span>${esc(planStats(rec))}</span></div>
+    <div class="plan-actions"><button type="button" class="secondary plan-action-btn" id="planRefreshBtn">ACTUALISER</button><button type="button" class="secondary plan-action-btn" id="planImportBtn">IMPORTER</button><input id="planImportInput" type="file" accept=".json,.bosplan.json,application/json" multiple hidden></div>
+    <div class="demo">Tu peux passer d’un plan à l’autre directement ici. Les plans enregistrés dans PLAN sont relus à chaque actualisation.</div>`;
+}
+function stepPlan(delta){
+  const records=readPlanRecords(); if(!records.length)return;
+  const rec=selectedPlanRecord(records),idx=Math.max(0,records.findIndex(r=>r.key===rec?.key)),next=(idx+delta+records.length)%records.length;
+  state.plan.selectedId=records[next].key; save(); renderModules();
+}
+async function importPlanFiles(files){
+  const imported=readImportedPlans(); let lastId=null;
+  for(const file of Array.from(files||[])){
+    try{
+      const raw=JSON.parse(await file.text()),ps=raw?.format==='BOS_PLAN_FEU'?raw.plan:raw;
+      if(!ps||!Array.isArray(ps.objects)) throw new Error('Format invalide');
+      const id=`imp_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+      const name=ps.planName||String(file.name||'Plan importé').replace(/\.bosplan\.json$|\.json$/i,'');
+      imported.push({id,name,folderId:ps.folderId||'',updatedAt:Date.now(),state:ps}); lastId=id;
+    }catch(e){ console.warn('Import PLAN impossible',file?.name,e); }
+  }
+  writeImportedPlans(imported);
+  if(lastId) state.plan.selectedId=`import:${lastId}`;
+  save(); renderModules();
+}
+function bindPlanModule(){
+  const select=document.getElementById('planSelect'); if(select)select.addEventListener('change',e=>{state.plan.selectedId=e.target.value;save();renderModules();});
+  const prev=document.getElementById('planPrevBtn'); if(prev)prev.addEventListener('click',()=>stepPlan(-1));
+  const next=document.getElementById('planNextBtn'); if(next)next.addEventListener('click',()=>stepPlan(1));
+  const refresh=document.getElementById('planRefreshBtn'); if(refresh)refresh.addEventListener('click',()=>renderModules());
+  const input=document.getElementById('planImportInput'),importBtn=document.getElementById('planImportBtn');
+  if(importBtn&&input)importBtn.addEventListener('click',()=>input.click());
+  if(input)input.addEventListener('change',async()=>{const files=input.files;input.value='';await importPlanFiles(files);});
 }
 
 function currentExposureInfo(){
@@ -317,9 +477,10 @@ function bindGlobal(){
   document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);save();renderCustomize();renderModules();});
 }
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
-function renderModule(id){ const [title,sub]=moduleMeta[id]; return `<article class="module ${state.open[id]?'open':''}" data-module="${id}"><button class="module-head" data-toggle="${id}"><span class="module-title"><i class="module-dot"></i><span><strong>${title}</strong><small>${sub}</small></span></span><span class="chev">⌄</span></button><div class="module-body">${renderBody(id)}</div></article>`; }
+function renderModule(id){ const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub; return `<article class="module ${state.open[id]?'open':''}" data-module="${id}"><button class="module-head" data-toggle="${id}"><span class="module-title"><i class="module-dot"></i><span><strong>${title}</strong><small>${esc(sub)}</small></span></span><span class="chev">⌄</span></button><div class="module-body">${renderBody(id)}</div></article>`; }
 
 function renderBody(id){
+  if(id==='plan') return renderPlanBody();
   if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div>${appLink(id)}`;
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
@@ -328,25 +489,7 @@ function renderBody(id){
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div><div class="luxgrid"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
-  if(id==='expo'){
-    const warn=state.expo.limitWarning;
-    const warnText=warn?(warn.reason==='locked'
-      ?`Correction impossible · les autres réglages disponibles sont verrouillés · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`
-      :`Correction impossible · ${expoLabel(warn.key)} limité à ${formatExpoValue(warn.key,currentExpoValue(warn.key))} · ${Math.abs(warn.remaining).toFixed(1).replace('.',',')} stop non compensé.`):'';
-    return `<div class="expo-calc-block">
-      <div class="expo-calc-head">
-        <div>
-          <div class="expo-calc-kicker">CALCUL</div>
-          <div class="expo-calc-note">Réglage actif : modifie un paramètre, les autres compensent automatiquement.</div>
-        </div>
-        <button type="button" id="expoResetBtn" class="expo-ref-btn">= RÉF.</button>
-      </div>
-      <div class="expo-calc-grid">${['aperture','iso','shutter','nd'].map(renderExpoCalcItem).join('')}</div>
-    </div>
-    <div class="expo-priority-note">Assombrir : Diaph ↑ → ISO ↓ → ND ↑ → Shutter · Éclaircir : Diaph ↓ → ND ↓ → ISO ↑ → Shutter.</div>
-    ${warn?`<div class="expo-warning">${warnText}</div>`:`<div class="expo-calc-summary ${expoCalcResidualClass()}">${expoCalcSummary()}</div>`}
-    ${appLink(id)}`;
-  }
+  if(id==='expo') return `<div class="coming-soon"><strong>BIENTÔT DISPONIBLE</strong><span>La compensation EXPO est encore en cours de finalisation.</span></div>`;
   return '';
 }
 function expoLabel(k){ return {aperture:'Diaph',iso:'ISO',shutter:'Shutter',nd:'ND'}[k]; }
@@ -410,6 +553,7 @@ function renderExpoCalcItem(k){
 }
 
 function bindModules(){
+  bindPlanModule();
   document.querySelectorAll('[data-toggle]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.toggle;state.open[id]=!state.open[id];save();b.closest('.module').classList.toggle('open',state.open[id]);}));
   const mb=document.getElementById('mediaBitrate'); if(mb)mb.addEventListener('input',e=>{state.media.bitrate=Math.max(1,Number(e.target.value)||1);save();updateMedia();});
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
