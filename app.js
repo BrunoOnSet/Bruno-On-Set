@@ -1,6 +1,6 @@
-const APP_VERSION = 'V31';
-const STORAGE_KEY = 'bos-cockpit-v31';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V32';
+const STORAGE_KEY = 'bos-cockpit-v32';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -505,6 +505,10 @@ function renderTopFocal(){
   const slider=document.getElementById('focalSlider'),readout=document.getElementById('focalReadout');
   if(slider) slider.value=String(Math.max(9,Math.min(200,Math.round(Number(state.focal)||35))));
   if(readout) readout.textContent=`${Math.round(Number(state.focal)||35)} mm`;
+}
+function apertureRangeValues(){
+  const lo=Number(state.cameraLimits?.apertureMin ?? 1.0),hi=Number(state.cameraLimits?.apertureMax ?? 22);
+  return apertures.filter(v=>Number(v)>=lo && Number(v)<=hi);
 }
 function isoRangeValues(){
   const lo=Number(state.cameraLimits.isoMin),hi=Number(state.cameraLimits.isoMax);
