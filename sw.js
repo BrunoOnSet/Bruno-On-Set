@@ -1,4 +1,4 @@
-const APP_VERSION='V38';
+const APP_VERSION='V40';
 const CACHE='bos-bruno-onset-v37';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';

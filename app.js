@@ -1,7 +1,7 @@
-const APP_VERSION = 'V38';
-const APP_BUILD = 38;
-const STORAGE_KEY = 'bos-cockpit-v38';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V40';
+const APP_BUILD = 40;
+const STORAGE_KEY = 'bos-cockpit-v40';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -61,7 +61,7 @@ const moduleMeta = {
   light: ['LIGHT', 'Projecteurs et Lux'],
   media: ['MEDIA', 'Temps d’enregistrement'],
   plan: ['PLAN', 'Plans de feu'],
-  expo: ['EXPO', 'DYNAMIQUE DE L’IMAGE']
+  expo: ['EXPO', "Dynamique de l'image"]
 };
 const APP_LINKS = { frame: '#', dof: '#', light: '#', media: '#', plan: '#', expo: '#' };
 
@@ -602,19 +602,51 @@ function renderRatioDialog(){
     document.getElementById('ratioDialog')?.close();
   }));
 }
+function frameCropSensorDimensions(){
+  const cam=currentCamera();
+  const sensorLong=Number(cam?.sensorWidthMm)||36;
+  const baseLandscapeRatio=16/9;
+  const targetRatio=Math.max(.2,Number(state.ratio)||baseLandscapeRatio);
+
+  // Modèle BOS : on part toujours du cadre natif 16:9 de la caméra.
+  // - ratios paysage / carré : caméra horizontale, puis masque dans le 16:9 ;
+  // - ratios portrait (< 1:1) : caméra tournée à 90°, donc base 9:16, puis masque éventuel.
+  const portrait=targetRatio<1;
+  let baseW,baseH;
+  if(portrait){
+    baseW=sensorLong/baseLandscapeRatio; // petite dimension du 16:9, devenue largeur
+    baseH=sensorLong;                    // grande dimension, devenue hauteur
+  }else{
+    baseW=sensorLong;
+    baseH=sensorLong/baseLandscapeRatio;
+  }
+  const baseRatio=baseW/baseH;
+  let cropW=baseW,cropH=baseH;
+  if(targetRatio<baseRatio){
+    // format plus étroit : masque sur les côtés
+    cropW=baseH*targetRatio;
+  }else if(targetRatio>baseRatio){
+    // format plus large : masque en haut / bas
+    cropH=baseW/targetRatio;
+  }
+  return {baseW,baseH,cropW,cropH,targetRatio,portrait};
+}
 function frameHfovDeg(){
-  const cam=currentCamera(),sensorWidth=Number(cam?.sensorWidthMm)||36,f=Math.max(1,Number(state.focal)||35);
-  const ratio=Math.max(.2,Number(state.ratio)||16/9);
-  // En portrait, on considère qu'on tourne physiquement la caméra :
-  // la grande dimension du capteur devient verticale. La largeur utile devient donc sensorWidth × ratio.
-  const effectiveHorizontalSensor = ratio < 1 ? sensorWidth * ratio : sensorWidth;
-  return 2*Math.atan(effectiveHorizontalSensor/(2*f))*180/Math.PI;
+  const f=Math.max(1,Number(state.focal)||35);
+  const {cropW}=frameCropSensorDimensions();
+  return 2*Math.atan(cropW/(2*f))*180/Math.PI;
+}
+function frameVerticalFovDeg(){
+  const f=Math.max(1,Number(state.focal)||35);
+  const {cropH}=frameCropSensorDimensions();
+  return 2*Math.atan(cropH/(2*f))*180/Math.PI;
 }
 function frameMetricsAtDistance(distanceM=state.distanceCm/100){
-  const d=Math.max(.01,Number(distanceM)||.01),hfov=frameHfovDeg();
+  const d=Math.max(.01,Number(distanceM)||.01);
+  const hfov=frameHfovDeg(),vfov=frameVerticalFovDeg();
   const frameWidth=2*d*Math.tan((hfov*Math.PI/180)/2);
-  const frameHeight=frameWidth/Math.max(.2,Number(state.ratio)||16/9);
-  return {hfov,frameWidth,frameHeight};
+  const frameHeight=2*d*Math.tan((vfov*Math.PI/180)/2);
+  return {hfov,vfov,frameWidth,frameHeight};
 }
 function previewTargetScales(){
   const refs=[
@@ -1227,10 +1259,6 @@ function updateDOF(){
   const idx=nearestApertureIndex(state.aperture);
   if(apertureSlider) apertureSlider.value=String(idx);
   if(apertureReadout) apertureReadout.textContent=apertureReadoutText(state.aperture);
-}
-function frameVerticalFovDeg(){
-  const h=frameHfovDeg()*Math.PI/180;
-  return 2*Math.atan(Math.tan(h/2)/Math.max(.2,Number(state.ratio)||16/9))*180/Math.PI;
 }
 function frameEyeHeightRatio(){
   const body=FRAME_FIGURE.footY-FRAME_FIGURE.headTopY;

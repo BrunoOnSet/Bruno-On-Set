@@ -121,3 +121,7 @@ V36 : ajout d’une barre FOCALE dans FRAME, au-dessus de RECUL. Elle est synchr
 V37 : correction du système de mise à jour. La V36 avait APP_VERSION resté sur V35 alors que version.json et le service worker étaient en V36, ce qui pouvait provoquer des rechargements répétés. V37 aligne tous les numéros, compare désormais les builds numériquement, ajoute un garde anti-boucle, supprime la navigation forcée depuis l'activation du service worker et espace la vérification périodique à 5 minutes.
 
 V38 : EXPO sous-titré « DYNAMIQUE DE L’IMAGE ». Ajout d’un mode de saisie libre : cliquer sur la valeur affichée d’une barre horizontale ouvre un champ numérique. Focale, diaph, distance/recul, hauteur caméra et waveform peuvent ainsi recevoir une valeur précise hors des pas du slider ; les calculs synchronisés utilisent la valeur exacte.
+
+V39 : correction du calcul des ratios FRAME. Les formats sont désormais traités comme des masques dans le cadre natif : 16:9 horizontal pour les formats paysage/carré (ex. 1:1 = cache latéral dans le 16:9), et 9:16 après rotation physique de la caméra pour les formats portrait. Le champ horizontal et vertical est calculé à partir de la zone réellement conservée du capteur.
+
+V40 : sous-titre EXPO harmonisé avec les autres modules : « Dynamique de l'image ».
