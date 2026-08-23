@@ -113,3 +113,7 @@ V32 : correctif critique de la V31. La fonction apertureRangeValues(), supprimé
 V33 : Distance sujet remplacée par un slider horizontal lié aux sliders RECUL de FRAME/DOF/LIGHT. Pas 0,10 m et affichage à deux décimales. Correction CSS des sliders : suppression du padding horizontal hérité des inputs génériques, qui raccourcissait visuellement et réellement la course vers les extrémités.
 
 V34 : Ratio retiré des Réglages caméra et déplacé dans FRAME sous RECUL. DOF reçoit trois contrôles liés, dans l’ordre FOCALE (9–200 mm), DIAPH, puis RECUL. La focale DOF est synchronisée bidirectionnellement avec la focale globale et recalcule FRAME/DOF/LIGHT immédiatement.
+
+V35 : ajout d'un réglage HAUTEUR CAMÉRA dans FRAME (0,50–2,50 m) qui déplace verticalement le sujet dans le cadre. Correction du calcul des ratios portrait : 9:16 est désormais traité comme une rotation physique de la caméra, avec échange logique des dimensions de champ par rapport au 16:9.
+
+V36 : ajout d’une barre FOCALE dans FRAME, au-dessus de RECUL. Elle est synchronisée en temps réel avec la focale globale et la barre FOCALE de DOF (9 à 200 mm, pas de 1 mm).

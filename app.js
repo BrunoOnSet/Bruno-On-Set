@@ -1,6 +1,6 @@
-const APP_VERSION = 'V34';
-const STORAGE_KEY = 'bos-cockpit-v34';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V35';
+const STORAGE_KEY = 'bos-cockpit-v36';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -35,6 +35,7 @@ const defaultState = {
   cameraGamma: 'slog3',
   aperture: 2.8,
   ratio: 16/9,
+  frameCameraHeightM: 1.55,
   cameraShutter: '1/50',
   cameraIso: '800',
   distanceCm: 250,
@@ -98,6 +99,7 @@ function normalizeState(){
   if(!state.cameraGamma) state.cameraGamma = 'slog3';
   state.aperture = Number(state.aperture) || 2.8;
   state.ratio = Number(state.ratio) || 16/9;
+  state.frameCameraHeightM = Math.max(0.50, Math.min(2.50, Number(state.frameCameraHeightM) || 1.55));
   if(!state.cameraShutter) state.cameraShutter = '1/50';
   if(!state.cameraIso) state.cameraIso = '800';
   if(typeof state.cameraOpen !== 'boolean') state.cameraOpen = true;
@@ -579,8 +581,12 @@ function renderRatioDialog(){
   }));
 }
 function frameHfovDeg(){
-  const cam=currentCamera(),sensor=Number(cam?.sensorWidthMm)||36,f=Math.max(1,Number(state.focal)||35);
-  return 2*Math.atan(sensor/(2*f))*180/Math.PI;
+  const cam=currentCamera(),sensorWidth=Number(cam?.sensorWidthMm)||36,f=Math.max(1,Number(state.focal)||35);
+  const ratio=Math.max(.2,Number(state.ratio)||16/9);
+  // En portrait, on considère qu'on tourne physiquement la caméra :
+  // la grande dimension du capteur devient verticale. La largeur utile devient donc sensorWidth × ratio.
+  const effectiveHorizontalSensor = ratio < 1 ? sensorWidth * ratio : sensorWidth;
+  return 2*Math.atan(effectiveHorizontalSensor/(2*f))*180/Math.PI;
 }
 function frameMetricsAtDistance(distanceM=state.distanceCm/100){
   const d=Math.max(.01,Number(distanceM)||.01),hfov=frameHfovDeg();
@@ -658,6 +664,9 @@ function setLinkedFocal(value){
   const dofFocal=document.getElementById('dofFocalSlider'),dofReadout=document.getElementById('dofFocalReadout');
   if(dofFocal) dofFocal.value=String(v);
   if(dofReadout) dofReadout.textContent=`${v} mm`;
+  const frameFocal=document.getElementById('frameFocalSlider'),frameReadout=document.getElementById('frameFocalReadout');
+  if(frameFocal) frameFocal.value=String(v);
+  if(frameReadout) frameReadout.textContent=`${v} mm`;
   save(); renderCameraSummary(); updateLive();
 }
 function setLinkedAperture(value){
@@ -697,7 +706,7 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider bos-frame-focal-slider"><span>FOCALE</span><input id="frameFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))}"><strong id="frameFocalReadout">${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm</strong></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-distance-slider bos-frame-height-slider"><span>HAUTEUR CAMÉRA</span><input id="frameCameraHeightSlider" type="range" min="0.50" max="2.50" step="0.05" value="${Number(state.frameCameraHeightM||1.55).toFixed(2)}"><strong id="frameCameraHeightReadout">${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="lightDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="lightDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
@@ -913,7 +922,9 @@ function bindModules(){
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
+  const frameFocal=document.getElementById('frameFocalSlider'); if(frameFocal) frameFocal.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
+  const frameCameraHeight=document.getElementById('frameCameraHeightSlider'); if(frameCameraHeight) frameCameraHeight.addEventListener('input',e=>{state.frameCameraHeightM=Math.max(.50,Math.min(2.50,Number(e.target.value)||1.55)); save(); updateFrame();});
   const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const dofFocal=document.getElementById('dofFocalSlider'); if(dofFocal) dofFocal.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const dofDistance=document.getElementById('dofDistanceSlider'); if(dofDistance) dofDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
@@ -1132,11 +1143,15 @@ function frameEyeHeightRatio(){
 }
 function frameProjectSingleSubject(){
   const d=Math.max(.05,(Number(state.distanceCm)||250)/100);
-  const subjectH=FRAME_SUBJECT_HEIGHT_M,cameraH=1.55;
+  const subjectH=FRAME_SUBJECT_HEIGHT_M;
+  const cameraH=Math.max(.50,Math.min(2.50,Number(state.frameCameraHeightM)||1.55));
+  const compositionReferenceH=1.55;
   const eyeZ=subjectH*frameEyeHeightRatio();
   const vfov=frameVerticalFovDeg()*Math.PI/180;
   const desiredEyeAngle=Math.atan((1/3)*Math.tan(vfov/2));
-  const axisElevation=Math.atan2(eyeZ-cameraH,d)-desiredEyeAngle;
+  // La visée de référence reste celle qui place les yeux au 1/3 à 1,55 m.
+  // Ensuite, monter/descendre la caméra déplace réellement le sujet dans le cadre.
+  const axisElevation=Math.atan2(eyeZ-compositionReferenceH,d)-desiredEyeAngle;
   const projectZ=(z)=>{
     const dy=d,dz=z-cameraH;
     const depth=dy*Math.cos(axisElevation)+dz*Math.sin(axisElevation);
@@ -1151,11 +1166,11 @@ function frameProjectSingleSubject(){
   const mannequinHeightPct=eyeToFeet/(FRAME_FIGURE.footRatio-FRAME_FIGURE.eyeRatio)*100;
   const eyeYPct=50-eye*50;
   const topPct=eyeYPct-FRAME_FIGURE.eyeRatio*mannequinHeightPct;
-  return {d,head,eye,feet,bodyScale,mannequinHeightPct,topPct};
+  return {d,head,eye,feet,bodyScale,mannequinHeightPct,topPct,cameraH};
 }
 function updateMedia(){ const el=document.getElementById('mediaMain'),sub=document.getElementById('mediaSub'); if(!el)return; const bitrateMb=bitrateToMbPerSec(),sec=(Number(state.media.card)*1000*8)/bitrateMb; el.textContent=fmtDuration(sec); if(sub)sub.textContent=`temps d’enregistrement · ${bitrateMb.toLocaleString('fr-FR')} Mb/s · réserve 0 %`; }
 function updateFrame(){
-  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot'),measure=document.getElementById('frameMeasure'),distanceSlider=document.getElementById('frameDistanceSlider'),distanceReadout=document.getElementById('frameDistanceReadout');
+  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot'),measure=document.getElementById('frameMeasure'),distanceSlider=document.getElementById('frameDistanceSlider'),distanceReadout=document.getElementById('frameDistanceReadout'),cameraHeightSlider=document.getElementById('frameCameraHeightSlider'),cameraHeightReadout=document.getElementById('frameCameraHeightReadout');
   if(!stage||!win||!subject||!planEl) return;
   const cam=currentCamera(),metrics=frameMetricsAtDistance(state.distanceCm/100),ratio=Math.max(.2,Number(state.ratio)||16/9),stageAspect=16/9;
   let w=92,h=w*stageAspect/ratio; if(h>82){h=82;w=h*ratio/stageAspect;}
@@ -1174,9 +1189,14 @@ function updateFrame(){
   }
   const plan=closestPreviewPlan(projection?.bodyScale||0);
   planEl.innerHTML=`<strong>${plan}</strong>`;
+  const frameFocalSlider=document.getElementById('frameFocalSlider'),frameFocalReadout=document.getElementById('frameFocalReadout');
+  if(frameFocalSlider) frameFocalSlider.value=String(Math.max(9,Math.min(200,Math.round(Number(state.focal)||35))));
+  if(frameFocalReadout) frameFocalReadout.textContent=`${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm`;
   syncDistanceRange('frameDistanceSlider','frameDistanceReadout');
+  if(cameraHeightSlider) cameraHeightSlider.value=Number(state.frameCameraHeightM||1.55).toFixed(2);
+  if(cameraHeightReadout) cameraHeightReadout.textContent=`${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m`;
   const ratioText=document.getElementById('ratioText'); if(ratioText) ratioText.textContent=ratioLabel(state.ratio);
-  if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
+  if(foot) foot.textContent=`Sujet unique · 1,80 m · caméra ${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
 function idealIsoFromLux(lux,aperture,shutterFraction='1/50'){
   const L=Number(lux),N=Number(aperture);

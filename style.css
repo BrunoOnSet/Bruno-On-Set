@@ -399,3 +399,8 @@ input[type="range"],
 .bos-frame-ratio-control .ratio-select-btn{height:40px;min-height:40px;padding:0 12px}
 .bos-frame-ratio-control .ratio-select-btn strong{font-size:11px}
 @media(max-width:560px){.bos-frame-ratio-control{gap:8px}}
+
+
+/* V35 — hauteur caméra FRAME + ratio portrait = rotation physique caméra */
+.bos-frame-height-slider>span{min-width:104px}
+@media(max-width:560px){.bos-frame-height-slider>span{min-width:92px;font-size:9px;letter-spacing:.08em}}
