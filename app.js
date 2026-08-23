@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v26';
+const STORAGE_KEY = 'bos-cockpit-v27';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -532,11 +532,8 @@ function closestPreviewPlan(scale){
   }
   return `PLAN ${refs[refs.length-1].label}`;
 }
-function frameFigureSvg(){
-  return `<svg viewBox="0 0 310 1300" aria-hidden="true" focusable="false">
-    <g class="figure-body"><ellipse cx="155" cy="128" rx="76" ry="118"/><path d="M105 228 C100 270 84 305 48 332 C23 352 14 397 11 458 L0 1296 H310 L299 458 C296 397 287 352 262 332 C226 305 210 270 205 228 Z"/></g>
-    <g class="figure-detail" fill="none"><path d="M122 115 Q134 103 145 114 M165 114 Q177 103 188 115"/><path d="M154 124 L154 167"/><path d="M140 191 Q155 199 171 191"/><path d="M72 331 H238"/><path d="M83 463 H227"/><path d="M155 270 V720"/><path d="M95 873 H215"/></g>
-  </svg>`;
+function frameFigureMarkup(){
+  return `<img class="bos-frame-person" src="assets/mannequin-preview.png" alt="Mannequin de cadrage FRAME" draggable="false">`;
 }
 function renderCameraSummary(){
   const el=document.getElementById('cameraSummary'); if(!el) return;
@@ -572,8 +569,8 @@ function bindGlobal(){
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
   document.getElementById('focalInput').addEventListener('input',e=>{state.focal=Math.max(1,Number(e.target.value)||35); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
   document.getElementById('focalPresets').addEventListener('click',e=>{const btn=e.target.closest('[data-focalpreset]'); if(!btn)return; state.focal=Number(btn.dataset.focalpreset); document.getElementById('focalInput').value=state.focal; save(); renderTopFocal(); renderCameraSummary(); updateLive();});
-  const aperture=document.getElementById('globalAperture'); if(aperture) aperture.addEventListener('change',e=>{state.aperture=Number(e.target.value)||2.8; save(); renderCameraSummary(); updateLive();});
-  const distance=document.getElementById('globalDistanceM'); if(distance) distance.addEventListener('input',e=>{state.distanceCm=Math.max(30,(Number(e.target.value)||.3)*100); save(); renderCameraSummary(); updateLive();});
+  const aperture=document.getElementById('globalAperture'); if(aperture){const syncA=e=>{state.aperture=Number(e.target.value)||2.8;save();renderCameraSummary();updateLive();};aperture.addEventListener('input',syncA);aperture.addEventListener('change',syncA);}
+  const distance=document.getElementById('globalDistanceM'); if(distance){const syncD=e=>{state.distanceCm=Math.max(30,(Number(e.target.value)||.3)*100);save();renderCameraSummary();updateLive();};distance.addEventListener('input',syncD);distance.addEventListener('change',syncD);}
   const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
@@ -589,7 +586,7 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureSvg()}</div><div class="bos-frame-info" id="frameInfo"></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-info" id="frameInfo"></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
@@ -965,30 +962,103 @@ function changeApertureBound(which,newVal){
   save(); renderGlobalCameraControls(); renderModules();
 }
 
-function updateLive(){ updateDOF();updateMedia();updateFrame();updateLight(); }
+function updateLive(){
+  for(const fn of [updateDOF,updateMedia,updateFrame,updateLight]){
+    try{fn();}catch(err){console.error('BOS live update',err);}
+  }
+}
+function cameraCocMm(cam=currentCamera()){
+  const explicit=Number(cam?.dof?.cocMm);
+  if(Number.isFinite(explicit) && explicit>0) return explicit;
+  const sensor=Number(cam?.sensorWidthMm)||36;
+  return 0.029*(sensor/36);
+}
+function calculateDofExact(){
+  const cam=currentCamera();
+  const f=Math.max(1,Number(state.focal)||35);
+  const N=Math.max(.5,Number(state.aperture)||2.8);
+  const c=cameraCocMm(cam);
+  const s=Math.max(f+1,(Number(state.distanceCm)||250)*10);
+  const H=(f*f)/(N*c)+f;
+  const near=(H*s)/(H+(s-f));
+  const den=H-(s-f);
+  const far=den<=0?Infinity:(H*s)/den;
+  return {cam,f,N,c,s,H,near,far,total:far===Infinity?Infinity:Math.max(0,far-near)};
+}
+function fmtDofMm(mm){
+  if(!Number.isFinite(mm)) return '∞';
+  if(mm<1000) return `${Math.round(mm/10)} cm`;
+  return `${(mm/1000).toFixed(2).replace('.',',')} m`;
+}
 function updateDOF(){
   const out=document.getElementById('dofMain'); if(!out)return;
-  const cam=currentCamera(),f=Number(state.focal),N=Number(state.aperture),c=cam?.dof?.cocMm||.029,s=Math.max(300,Number(state.distanceCm)*10);
-  const H=(f*f)/(N*c)+f,near=(H*s)/(H+(s-f)),far=(H<=s-f)?Infinity:(H*s)/(H-(s-f)),dof=far===Infinity?Infinity:(far-near)/1000;
-  out.textContent=`PDC ${fmtM(dof)}`;
-  const sub=document.getElementById('dofSub'); if(sub) sub.textContent=`Net de ${fmtM(near/1000)} à ${fmtM(far/1000)} · mise au point ${(state.distanceCm/100).toFixed(2).replace('.',',')} m · ${state.focal} mm · f/${state.aperture}`;
+  const r=calculateDofExact();
+  out.textContent=`PDC ${fmtDofMm(r.total)}`;
+  const sub=document.getElementById('dofSub');
+  if(sub) sub.textContent=`Net de ${fmtDofMm(r.near)} à ${fmtDofMm(r.far)} · MAP ${fmtDofMm(r.s)} · ${r.f} mm · f/${r.N} · ${r.cam?.dof?.label||'capteur'}`;
+}
+function frameVerticalFovDeg(){
+  const h=frameHfovDeg()*Math.PI/180;
+  return 2*Math.atan(Math.tan(h/2)/Math.max(.2,Number(state.ratio)||16/9))*180/Math.PI;
+}
+function frameEyeHeightRatio(){
+  const body=FRAME_FIGURE.footY-FRAME_FIGURE.headTopY;
+  return 1-((FRAME_FIGURE.eyeY-FRAME_FIGURE.headTopY)/body);
+}
+function frameProjectSingleSubject(){
+  const d=Math.max(.05,(Number(state.distanceCm)||250)/100);
+  const subjectH=FRAME_SUBJECT_HEIGHT_M,cameraH=1.55;
+  const eyeZ=subjectH*frameEyeHeightRatio();
+  const vfov=frameVerticalFovDeg()*Math.PI/180;
+  const desiredEyeAngle=Math.atan((1/3)*Math.tan(vfov/2));
+  const axisElevation=Math.atan2(eyeZ-cameraH,d)-desiredEyeAngle;
+  const projectZ=(z)=>{
+    const dy=d,dz=z-cameraH;
+    const depth=dy*Math.cos(axisElevation)+dz*Math.sin(axisElevation);
+    if(depth<=.03) return null;
+    const up=-dy*Math.sin(axisElevation)+dz*Math.cos(axisElevation);
+    return up/(depth*Math.tan(vfov/2));
+  };
+  const head=projectZ(subjectH),eye=projectZ(eyeZ),feet=projectZ(0);
+  if(head===null||eye===null||feet===null) return null;
+  const bodyScale=Math.abs(feet-head)/2;
+  const eyeToFeet=Math.abs(feet-eye)/2;
+  const mannequinHeightPct=eyeToFeet/(FRAME_FIGURE.footRatio-FRAME_FIGURE.eyeRatio)*100;
+  const eyeYPct=50-eye*50;
+  const topPct=eyeYPct-FRAME_FIGURE.eyeRatio*mannequinHeightPct;
+  return {d,head,eye,feet,bodyScale,mannequinHeightPct,topPct};
 }
 function updateMedia(){ const el=document.getElementById('mediaMain'),sub=document.getElementById('mediaSub'); if(!el)return; const bitrateMb=bitrateToMbPerSec(),sec=(Number(state.media.card)*1000*8)/bitrateMb; el.textContent=fmtDuration(sec); if(sub)sub.textContent=`temps d’enregistrement · ${bitrateMb.toLocaleString('fr-FR')} Mb/s · réserve 0 %`; }
 function updateFrame(){
-  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),info=document.getElementById('frameInfo'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot');
+  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),info=document.getElementById('frameInfo'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot'),measure=document.getElementById('frameMeasure');
   if(!stage||!win||!subject||!info||!planEl) return;
   const cam=currentCamera(),metrics=frameMetricsAtDistance(state.distanceCm/100),ratio=Math.max(.2,Number(state.ratio)||16/9),stageAspect=16/9;
   let w=92,h=w*stageAspect/ratio; if(h>82){h=82;w=h*ratio/stageAspect;}
   win.style.width=`${w}%`; win.style.height=`${h}%`;
-  const bodyScale=FRAME_SUBJECT_HEIGHT_M/Math.max(.001,metrics.frameHeight);
-  const figureHeightPct=(bodyScale/FRAME_FIGURE.bodyRatio)*100;
-  const topPct=33.333-FRAME_FIGURE.eyeRatio*figureHeightPct;
-  subject.style.height=`${figureHeightPct}%`; subject.style.top=`${topPct}%`; subject.style.width='auto';
-  const plan=closestPreviewPlan(bodyScale);
+  const projection=frameProjectSingleSubject();
+  if(projection){
+    subject.style.height=`${projection.mannequinHeightPct}%`;
+    subject.style.top=`${projection.topPct}%`;
+    subject.style.width='auto';
+    const mh=projection.mannequinHeightPct;
+    if(measure){
+      measure.style.height=`${mh*FRAME_FIGURE.bodyRatio}%`;
+      measure.style.top=`${projection.topPct+mh*FRAME_FIGURE.headTopRatio}%`;
+      measure.style.left='72%';
+    }
+  }
+  const plan=closestPreviewPlan(projection?.bodyScale||0);
   const short=(cam?.name||'Caméra').replace(/^Sony\s+/,'').replace(/^ARRI\s+/,'').replace(/^RED\s+/,'');
   info.innerHTML=`<span>CAMÉRA<b>${esc(short)}</b></span><span>FOCALE<b>${state.focal} mm</b></span><span>FORMAT<b>${esc(ratioLabel(state.ratio))}</b></span><span>HFOV<b>${metrics.hfov.toFixed(1)}°</b></span>`;
   planEl.innerHTML=`<strong>${plan}</strong><span>${esc(short)} · ${state.focal} mm · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m</span>`;
   if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
+}
+function idealIsoFromLux(lux,aperture,shutterFraction='1/50'){
+  const L=Number(lux),N=Number(aperture);
+  const parts=String(shutterFraction).split('/').map(Number);
+  const t=(parts.length===2&&parts[1])?parts[0]/parts[1]:1/50;
+  if(!(L>0)||!(N>0)||!(t>0)) return null;
+  return (250*N*N)/(L*t);
 }
 function nearestIsoValue(target,minIso,maxIso){
   const allowed=isos.map(Number).filter(v=>v>=minIso&&v<=maxIso);

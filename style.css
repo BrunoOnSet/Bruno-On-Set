@@ -316,3 +316,14 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .bos-frame-plan{position:absolute;left:10px;bottom:10px;z-index:8;background:rgba(30,31,32,.82);border:1px solid rgba(255,255,255,.14);border-radius:13px;padding:8px 10px;color:#f4f4f2;max-width:70%}.bos-frame-plan strong{display:block;font-size:11px;letter-spacing:.08em}.bos-frame-plan span{display:block;margin-top:3px;font-size:8px;color:#bfc2c5}.bos-frame-foot{font-size:9px;color:var(--muted);margin-top:8px;line-height:1.4}
 .luxgrid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.luxbox-target{border-color:color-mix(in srgb,var(--blue) 45%,var(--line));background:color-mix(in srgb,var(--blue) 7%,var(--panel2))}.luxbox-target small{color:var(--blue)}
 @media(max-width:560px){.camera-shooting-grid{grid-template-columns:1fr 1fr}.camera-shooting-grid label:last-child{grid-column:1/-1}.ratio-choice{min-height:58px;font-size:16px}.bos-frame-info{gap:9px;padding:7px 9px}.bos-frame-info span{font-size:6px}.bos-frame-info b{font-size:9px}.bos-frame-eye-line span{display:none}.bos-frame-plan{max-width:82%}.luxgrid-3{grid-template-columns:1fr}}
+
+
+/* V27 */
+.bos-frame-subject{aspect-ratio:310/1300;z-index:3;pointer-events:none}
+.bos-frame-person{display:block;width:100%;height:100%;object-fit:contain;object-position:center top;filter:drop-shadow(0 0 3px rgba(255,255,255,.92)) drop-shadow(0 7px 7px rgba(0,0,0,.13));user-select:none;-webkit-user-drag:none}
+.bos-frame-person-badge{position:absolute;left:50%;top:-34px;transform:translateX(-50%);background:rgba(46,127,142,.90);color:#fff;border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:5px 10px;font-size:9px;font-weight:900;z-index:9}
+.bos-frame-measure{position:absolute;z-index:7;width:1px;border-left:1px solid rgba(47,91,102,.75);pointer-events:none}
+.bos-frame-measure:before,.bos-frame-measure:after{content:"";position:absolute;left:-7px;width:14px;border-top:1px solid rgba(47,91,102,.75)}
+.bos-frame-measure:before{top:0}.bos-frame-measure:after{bottom:0}
+.bos-frame-measure strong{position:absolute;left:10px;top:70%;transform:translateY(-50%);background:rgba(255,255,255,.9);color:#285867;border-radius:9px;padding:5px 7px;font-size:9px;white-space:nowrap}
+:root[data-theme="dark"] .bos-frame-measure strong{background:rgba(20,23,26,.9);color:#9dc8d0}
