@@ -127,3 +127,9 @@ V39 : correction du calcul des ratios FRAME. Les formats sont désormais traité
 V40 : sous-titre EXPO harmonisé avec les autres modules : « Dynamique de l'image ».
 
 V41 — Sélecteur de projecteur façon BOS LIGHT (Marque → Gamme → Puissance/Modèle), réglages caméra globaux simplifiés à Marque/Caméra/Gamma, et vérification de mise à jour limitée à une fois par heure maximum. Service worker/cache alignés sur V41.
+
+V42 — IDENTITÉ BRUNO ONSET
+- Le logo utilisateur fourni est utilisé tel quel dans l'en-tête, sans transparence ni réinterprétation.
+- « Bruno OnSet » est affiché à côté en Montserrat Bold, couleur BOS #2F5B66.
+- L'icône PWA Android/iOS est dérivée directement de l'image fournie, sans recadrage de contenu.
+- Cache / version / service worker incrémentés en V42.

@@ -7,18 +7,22 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>BOS — Bruno OnSet</title>
-  <link rel="manifest" href="manifest.webmanifest?v=41" />
+  <link rel="manifest" href="manifest.webmanifest?v=42" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=41" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=42" />
 </head>
 <body>
   <main class="shell">
     <header class="topbar cardlike">
       <div class="top-inner bos-top-inner">
         <div class="top-title bos-top-title">
-          <div class="tool-eyebrow bos-tool-eyebrow" aria-label="Bruno OnSet">
-            <span class="eyebrow-logo" aria-hidden="true">BOS</span>
-            <span class="eyebrow-brand" aria-label="Bruno OnSet"><span class="bos-letter">B</span>RUNO <span class="bos-letter">O</span>N<span class="bos-letter">S</span>ET</span>
+          <div class="bos-brand-lockup" aria-label="Bruno OnSet">
+            <img class="bos-header-logo" src="assets/logo-bruno-onset.jpg" alt="Logo Bruno OnSet">
+            <span class="bos-header-name">Bruno OnSet</span>
           </div>
         </div>
         <div class="top-actions bos-top-actions">
@@ -59,7 +63,7 @@
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V41</footer>
+    <footer class="footer">BOS — Bruno OnSet · V42</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">
@@ -108,6 +112,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=41" defer></script>
+  <script src="app.js?v=42" defer></script>
 </body>
 </html>

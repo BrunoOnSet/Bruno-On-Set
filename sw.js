@@ -1,19 +1,20 @@
-const APP_VERSION='V41';
-const CACHE='bos-bruno-onset-v41';
+const APP_VERSION='V42';
+const CACHE='bos-bruno-onset-v42';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=41',
-  'app.js?v=41',
-  'manifest.webmanifest?v=41',
+  'style.css?v=42',
+  'app.js?v=42',
+  'manifest.webmanifest?v=42',
   'version.json',
   'data/cameras.json',
   'data/lights.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'assets/logo-bruno-onset.jpg',
   'assets/mannequin-preview.png'
 ];
 
