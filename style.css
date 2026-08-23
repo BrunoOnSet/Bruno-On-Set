@@ -391,3 +391,11 @@ input[type="range"],
   .camera-ratio-row{max-width:none}
   .camera-distance-range>span{min-width:0}
 }
+
+
+/* V34 — Ratio déplacé dans FRAME + FOCALE / DIAPH / RECUL dans DOF */
+.bos-frame-ratio-control{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;margin-top:10px;padding:0 2px}
+.bos-frame-ratio-control>span{color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.12em;white-space:nowrap}
+.bos-frame-ratio-control .ratio-select-btn{height:40px;min-height:40px;padding:0 12px}
+.bos-frame-ratio-control .ratio-select-btn strong{font-size:11px}
+@media(max-width:560px){.bos-frame-ratio-control{gap:8px}}

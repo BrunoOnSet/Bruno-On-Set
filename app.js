@@ -1,6 +1,6 @@
-const APP_VERSION = 'V33';
-const STORAGE_KEY = 'bos-cockpit-v33';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V34';
+const STORAGE_KEY = 'bos-cockpit-v34';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -615,7 +615,7 @@ function frameFigureMarkup(){
 function renderCameraSummary(){
   const el=document.getElementById('cameraSummary'); if(!el) return;
   const cam=currentCamera();
-  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · f/${state.aperture} · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m · ${ratioLabel(state.ratio)}`;
+  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · f/${state.aperture} · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m`;
 }
 function clampApertureToRange(compensate=true){
   const vals=apertureRangeValues();
@@ -637,7 +637,6 @@ function renderGlobalCameraControls(){
   if(apertureSlider) apertureSlider.value=String(apertureIdx);
   if(apertureReadout) apertureReadout.textContent=`f/${state.aperture}`;
   syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
-  const rt=document.getElementById('ratioText'); if(rt) rt.textContent=ratioLabel(state.ratio);
   renderCameraSummary(); renderGammaButtons(); renderRatioDialog(); syncGlobalLimitState();
 }
 function syncGlobalLimitState(){
@@ -648,6 +647,17 @@ function setLinkedDistanceMeters(value){
   const v=Math.round(raw*10)/10;
   state.distanceCm=Math.round(v*100);
   syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
+  save(); renderCameraSummary(); updateLive();
+}
+function setLinkedFocal(value){
+  const v=Math.max(9,Math.min(200,Math.round(Number(value)||35)));
+  state.focal=v;
+  const cameraFocal=document.getElementById('focalSlider'),cameraReadout=document.getElementById('focalReadout');
+  if(cameraFocal) cameraFocal.value=String(v);
+  if(cameraReadout) cameraReadout.textContent=`${v} mm`;
+  const dofFocal=document.getElementById('dofFocalSlider'),dofReadout=document.getElementById('dofFocalReadout');
+  if(dofFocal) dofFocal.value=String(v);
+  if(dofReadout) dofReadout.textContent=`${v} mm`;
   save(); renderCameraSummary(); updateLive();
 }
 function setLinkedAperture(value){
@@ -670,10 +680,9 @@ function bindGlobal(){
   document.getElementById('cameraToggle').addEventListener('click',()=>{state.cameraOpen=!state.cameraOpen; save(); renderGlobalCameraControls();});
   document.getElementById('cameraBrandMode').addEventListener('click',e=>{const btn=e.target.closest('[data-camerabrand]'); if(!btn)return; const brand=btn.dataset.camerabrand,remembered=getLastCameraForBrand(brand),first=camerasForBrand(brand)[0]; if(remembered)applyCameraSelection(remembered); else if(first)applyCameraSelection(first.id);});
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
-  const focalSlider=document.getElementById('focalSlider'); if(focalSlider) focalSlider.addEventListener('input',e=>{state.focal=Math.max(9,Math.min(200,Math.round(Number(e.target.value)||35))); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
+  const focalSlider=document.getElementById('focalSlider'); if(focalSlider) focalSlider.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const aperture=document.getElementById('globalApertureSlider'); if(aperture) aperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
   const distance=document.getElementById('globalDistanceSlider'); if(distance) distance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
-  const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
@@ -684,11 +693,11 @@ function renderModule(id){ const [title,baseSub]=moduleMeta[id],sub=id==='plan'?
 
 function renderBody(id){
   if(id==='plan') return renderPlanBody();
-  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="dofDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)))}"><strong id="dofApertureReadout">f/${state.aperture}</strong></div></div>${appLink(id)}`;
+  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))}"><strong id="dofFocalReadout">${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)))}"><strong id="dofApertureReadout">f/${state.aperture}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="dofDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div>${appLink(id)}`;
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="lightDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="lightDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
@@ -905,6 +914,8 @@ function bindModules(){
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
   const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
+  const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
+  const dofFocal=document.getElementById('dofFocalSlider'); if(dofFocal) dofFocal.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const dofDistance=document.getElementById('dofDistanceSlider'); if(dofDistance) dofDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
   const lightDistance=document.getElementById('lightDistanceSlider'); if(lightDistance) lightDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
   const dofAperture=document.getElementById('dofApertureSlider'); if(dofAperture) dofAperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
@@ -1102,6 +1113,9 @@ function updateDOF(){
   out.textContent=`PDC ${fmtDofMm(r.total)}`;
   const sub=document.getElementById('dofSub');
   if(sub) sub.textContent=`Net de ${fmtDofMm(r.near)} à ${fmtDofMm(r.far)} · MAP ${fmtDofMm(r.s)} · ${r.f} mm · f/${r.N} · ${r.cam?.dof?.label||'capteur'}`;
+  const focalSlider=document.getElementById('dofFocalSlider'),focalReadout=document.getElementById('dofFocalReadout');
+  if(focalSlider) focalSlider.value=String(Math.max(9,Math.min(200,Math.round(Number(state.focal)||35))));
+  if(focalReadout) focalReadout.textContent=`${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm`;
   syncDistanceRange('dofDistanceSlider','dofDistanceReadout');
   const apertureSlider=document.getElementById('dofApertureSlider'),apertureReadout=document.getElementById('dofApertureReadout');
   const idx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)));
@@ -1161,6 +1175,7 @@ function updateFrame(){
   const plan=closestPreviewPlan(projection?.bodyScale||0);
   planEl.innerHTML=`<strong>${plan}</strong>`;
   syncDistanceRange('frameDistanceSlider','frameDistanceReadout');
+  const ratioText=document.getElementById('ratioText'); if(ratioText) ratioText.textContent=ratioLabel(state.ratio);
   if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
 function idealIsoFromLux(lux,aperture,shutterFraction='1/50'){

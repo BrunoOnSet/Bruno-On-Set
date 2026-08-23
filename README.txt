@@ -111,3 +111,5 @@ V31 : simplification des contrôles. Toutes les barres de distance/recul utilise
 V32 : correctif critique de la V31. La fonction apertureRangeValues(), supprimée par erreur lors du passage du diaph en slider, est restaurée. Cette erreur JavaScript bloquait l'initialisation complète : liste des caméras vide, gamma absent et sliders inactifs. Mise à jour du cache/version en V32.
 
 V33 : Distance sujet remplacée par un slider horizontal lié aux sliders RECUL de FRAME/DOF/LIGHT. Pas 0,10 m et affichage à deux décimales. Correction CSS des sliders : suppression du padding horizontal hérité des inputs génériques, qui raccourcissait visuellement et réellement la course vers les extrémités.
+
+V34 : Ratio retiré des Réglages caméra et déplacé dans FRAME sous RECUL. DOF reçoit trois contrôles liés, dans l’ordre FOCALE (9–200 mm), DIAPH, puis RECUL. La focale DOF est synchronisée bidirectionnellement avec la focale globale et recalcule FRAME/DOF/LIGHT immédiatement.
