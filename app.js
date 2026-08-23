@@ -1,6 +1,6 @@
-const APP_VERSION = 'V32';
-const STORAGE_KEY = 'bos-cockpit-v32';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V33';
+const STORAGE_KEY = 'bos-cockpit-v33';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -636,7 +636,7 @@ function renderGlobalCameraControls(){
   const apertureIdx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)));
   if(apertureSlider) apertureSlider.value=String(apertureIdx);
   if(apertureReadout) apertureReadout.textContent=`f/${state.aperture}`;
-  const d=document.getElementById('globalDistanceM'); if(d) d.value=(state.distanceCm/100).toFixed(2);
+  syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
   const rt=document.getElementById('ratioText'); if(rt) rt.textContent=ratioLabel(state.ratio);
   renderCameraSummary(); renderGammaButtons(); renderRatioDialog(); syncGlobalLimitState();
 }
@@ -647,8 +647,7 @@ function setLinkedDistanceMeters(value){
   const raw=Math.max(.30,Math.min(50,Number(value)||.30));
   const v=Math.round(raw*10)/10;
   state.distanceCm=Math.round(v*100);
-  const cameraDistance=document.getElementById('globalDistanceM');
-  if(cameraDistance) cameraDistance.value=v.toFixed(2);
+  syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
   save(); renderCameraSummary(); updateLive();
 }
 function setLinkedAperture(value){
@@ -673,7 +672,7 @@ function bindGlobal(){
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
   const focalSlider=document.getElementById('focalSlider'); if(focalSlider) focalSlider.addEventListener('input',e=>{state.focal=Math.max(9,Math.min(200,Math.round(Number(e.target.value)||35))); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
   const aperture=document.getElementById('globalApertureSlider'); if(aperture) aperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
-  const distance=document.getElementById('globalDistanceM'); if(distance){const syncD=e=>setLinkedDistanceMeters(e.target.value);distance.addEventListener('input',syncD);distance.addEventListener('change',syncD);}
+  const distance=document.getElementById('globalDistanceSlider'); if(distance) distance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
   const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
