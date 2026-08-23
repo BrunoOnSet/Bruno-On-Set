@@ -464,3 +464,19 @@ input[type="range"],
 
 /* V43 header logo exact image */
 .bos-header-logo{object-fit:contain;background:transparent;border-radius:0}
+
+
+/* V44 header tagline */
+.bos-brand-text{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.bos-header-tagline{font-size:11px;line-height:1.2;color:#6F7780;letter-spacing:.01em;white-space:nowrap}
+:root[data-theme="dark"] .bos-header-tagline{color:#9AA2A9}
+@media (max-width:520px){.bos-brand-text{gap:2px}.bos-header-tagline{font-size:9px}}
+
+/* V45 — slogan validé */
+.bos-header-tagline{
+  font-family:"Montserrat",Arial,sans-serif;
+  font-weight:400;
+  color:#17191C;
+  letter-spacing:0;
+}
+:root[data-theme="dark"] .bos-header-tagline{color:#17191C}

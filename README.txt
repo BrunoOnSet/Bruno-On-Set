@@ -138,3 +138,12 @@ V43 — ENTÊTE
 - Remplacement du logo d'entête par l'image exacte fournie par l'utilisateur (BOS blanc sur fond bleu), sans réinterprétation.
 - Logo affiché en entier dans l'entête (object-fit: contain).
 - Version / cache / service worker incrémentés en V43.
+
+V44 — ENTÊTE
+- Ajout d'une phrase sous « Bruno OnSet » : « L'application de tournage professionnel ».
+- Version / cache / service worker incrémentés en V44.
+
+V45 — SLOGAN D'ENTÊTE
+- Slogan validé : « Avec vous, sur chaque tournage. »
+- Slogan en Montserrat regular, noir (#17191C).
+- Version / cache / service worker incrémentés en V45.
