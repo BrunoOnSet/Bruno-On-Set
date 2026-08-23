@@ -105,3 +105,5 @@ V30 — MISE À JOUR ANDROID / PWA RENFORCÉE
 - Ajout de `version.json`, interrogé sans cache au démarrage, au retour au premier plan et toutes les 60 s.
 - Si une nouvelle version est détectée, BOS force une actualisation avec paramètre anti-cache.
 - `style.css`, `app.js` et le manifest sont versionnés dans `index.html`.
+
+V31 : simplification des contrôles. Toutes les barres de distance/recul utilisent désormais un pas de 0,10 m et affichent toujours deux décimales (ex. 1,50 m, 1,60 m). Dans Réglages caméra, le diaph devient une barre horizontale identique à DOF, et la focale devient une barre continue de 9 à 200 mm par pas de 1 mm.

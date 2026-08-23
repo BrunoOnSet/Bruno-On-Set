@@ -346,3 +346,19 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .bos-linked-slider input{width:100%;accent-color:var(--blue)}
 .bos-linked-slider strong{min-width:60px;color:var(--text);font-size:11px;text-align:right}
 @media(max-width:560px){.bos-linked-slider{gap:8px}.bos-linked-slider strong{min-width:54px}}
+
+
+/* V31 — réglages caméra par barres + pas distance simplifié */
+.camera-range-block{padding-top:14px}
+.camera-range-slider{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:0 2px;min-width:0}
+.camera-range-slider>span{margin:0;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.12em;white-space:nowrap}
+.camera-range-slider input[type="range"]{width:100%;min-width:0;accent-color:var(--blue)}
+.camera-range-slider strong{min-width:66px;color:var(--text);font-size:11px;text-align:right;white-space:nowrap}
+.camera-shooting-grid-v31{grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr) minmax(0,.8fr);align-items:end}
+.camera-aperture-range{padding-bottom:8px}
+@media(max-width:560px){
+  .camera-shooting-grid-v31{grid-template-columns:1fr}
+  .camera-shooting-grid-v31 label:last-child{grid-column:auto}
+  .camera-range-slider{gap:8px}
+  .camera-range-slider strong{min-width:58px}
+}
