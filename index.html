@@ -54,25 +54,17 @@
           <div class="preset-row" id="focalPresets" aria-label="Raccourcis focale"></div>
         </div>
 
-        <div class="camera-settings-grid camera-settings-grid-4">
-          <label><span>Diaph</span><select id="globalAperture"></select></label>
-          <label><span>ISO</span><select id="globalIso"></select></label>
-          <label><span>Shutter</span><select id="globalShutter"></select></label>
-          <label><span>Distance</span><div class="unit-input"><input id="globalDistance" type="number" inputmode="decimal" min="10" step="10" value="250"><b>cm</b></div></label>
-        </div>
-
-        <div class="camera-limits-grid">
-          <label><span>ISO MIN</span><select id="globalIsoMin"></select></label>
-          <label><span>ISO MAX</span><select id="globalIsoMax"></select></label>
-          <label><span>DIAPH MIN</span><select id="globalApertureMin"></select></label>
-          <label><span>DIAPH MAX</span><select id="globalApertureMax"></select></label>
+        <div class="camera-gamma-block">
+          <span class="field-label">Gamma</span>
+          <div class="gamma-chips" id="gammaMode" aria-label="Choisir la courbe gamma"></div>
+          <div class="gamma-info" id="gammaInfo">—</div>
         </div>
       </div>
     </section>
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V24</footer>
+    <footer class="footer">BOS — Bruno OnSet · V25</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">

@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'bos-cockpit-v24';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v25';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -19,6 +19,7 @@ const defaultState = {
   theme: 'light',
   cameraId: 'fx6',
   focal: 35,
+  cameraGamma: 'slog3',
   aperture: 2.8,
   cameraShutter: '1/50',
   cameraIso: '800',
@@ -80,6 +81,7 @@ function loadState(){
 }
 function normalizeState(){
   state.focal = Math.max(1, Number(state.focal) || 35);
+  if(!state.cameraGamma) state.cameraGamma = 'slog3';
   state.aperture = Number(state.aperture) || 2.8;
   if(!state.cameraShutter) state.cameraShutter = '1/50';
   if(!state.cameraIso) state.cameraIso = '800';
@@ -379,6 +381,7 @@ async function init(){
   else { lightDatabase=null; lightFixtures=[]; lightDatabaseSource='none'; }
   prepareLightState();
   if(!cameras.some(c=>c.id===state.cameraId)) state.cameraId=cameras[0]?.id || 'ff';
+  ensureCameraGammaValid();
   if(Number(state.cameraLimits.isoMin) > Number(state.cameraLimits.isoMax)) state.cameraLimits.isoMax=state.cameraLimits.isoMin;
   if(Number(state.cameraLimits.apertureMin) > Number(state.cameraLimits.apertureMax)) state.cameraLimits.apertureMax=state.cameraLimits.apertureMin;
   const baseApertureVals=apertureRangeValues();
@@ -408,6 +411,7 @@ function applyCameraSelection(nextCameraId){
   const changed=next.id!==state.cameraId;
   state.cameraId=next.id; rememberCameraForBrand(next);
   if(changed) resetIsoRangeForCamera();
+  ensureCameraGammaValid();
   save(); renderCameraSelect(); renderGlobalCameraControls(); renderModules();
 }
 function renderTopFocal(){ const root=document.getElementById('focalPresets'); if(!root)return; root.innerHTML=FOCAL_PRESETS.map(v=>`<button type="button" class="preset-btn ${Number(state.focal)===v?'active':''}" data-focalpreset="${v}">${v}</button>`).join(''); }
@@ -426,10 +430,55 @@ function clampCameraIsoToRange(){
   const best=vals.reduce((a,b)=>Math.abs(Number(b)-cur)<Math.abs(Number(a)-cur)?b:a,vals[0]);
   state.cameraIso=String(best);
 }
+function gammaProfilesForCamera(cam=currentCamera()){
+  const profs=cam?.expo?.profiles || cam?.exposure?.profiles;
+  if(profs && typeof profs==='object' && Object.keys(profs).length) return profs;
+  const sonyFallback={
+    fx30:{slog3:{label:'S-Log3 / Flexible ISO',baseValues:[800,2500],defaultValue:800},scinetone:{label:'S-Cinetone',baseValues:[125,400],defaultValue:125}},
+    fx3:{slog3:{label:'S-Log3 / Flexible ISO',baseValues:[800,12800],defaultValue:800},scinetone:{label:'S-Cinetone',baseValues:[100,2000],defaultValue:100}},
+    fx5:{slog3:{label:'S-Log3 / Flexible ISO',baseValues:[800,4000,12800],defaultValue:800},scinetone:{label:'S-Cinetone',baseValues:[320,1600,5000],defaultValue:320}},
+    fx6:{slog3:{label:'S-Log3 / Flexible ISO',baseValues:[800,12800],defaultValue:800},scinetone:{label:'S-Cinetone',baseValues:[320,5000],defaultValue:320}}
+  };
+  if(cam?.id && sonyFallback[cam.id]) return sonyFallback[cam.id];
+  const base=cam?.exposure?.baseValues || [];
+  const mode=cam?.exposure?.mode || cam?.expo?.label || 'Profil constructeur';
+  return { default:{label:mode, baseValues:base, defaultValue:cam?.exposure?.defaultValue || base[0] || null} };
+}
+function gammaProfileEntries(cam=currentCamera()){
+  return Object.entries(gammaProfilesForCamera(cam));
+}
+function gammaProfileForCamera(cam=currentCamera()){
+  const profiles=gammaProfilesForCamera(cam);
+  return profiles[state.cameraGamma] || Object.values(profiles)[0] || null;
+}
+function ensureCameraGammaValid(){
+  const entries=gammaProfileEntries(currentCamera());
+  if(!entries.length){ state.cameraGamma='default'; return; }
+  if(!entries.some(([k])=>k===state.cameraGamma)) state.cameraGamma=entries[0][0];
+}
+function gammaShortLabel(cam=currentCamera()){
+  const p=gammaProfileForCamera(cam);
+  return p?.label || 'Gamma';
+}
+function gammaInfoText(cam=currentCamera()){
+  const p=gammaProfileForCamera(cam);
+  if(!p) return 'Courbe gamma non renseignée pour cette caméra.';
+  const values=(p.baseValues||[]).map(v=>Number(v).toLocaleString('fr-FR').replace(/ /g,' '));
+  const unit=(cam?.exposure?.unit || cam?.expo?.unit || 'ISO');
+  const title=unit==='EI' ? 'Base EI' : 'ISO natifs / Lo-Hi';
+  const valueText=values.length ? values.join(' / ') : (p.defaultValue ? Number(p.defaultValue).toLocaleString('fr-FR').replace(/ /g,' ') : '—');
+  return `${title} · ${cam?.name || 'Caméra'} · ${p.label || 'Gamma'} : ${valueText}`;
+}
+function renderGammaButtons(){
+  const host=document.getElementById('gammaMode'); if(!host) return;
+  const entries=gammaProfileEntries(currentCamera());
+  host.innerHTML=entries.map(([key,p])=>`<button type="button" class="gamma-chip ${state.cameraGamma===key?'active':''}" data-gamma="${esc(key)}">${esc(p.label || key)}</button>`).join('');
+  const info=document.getElementById('gammaInfo'); if(info) info.textContent=gammaInfoText(currentCamera());
+}
 function renderCameraSummary(){
   const el=document.getElementById('cameraSummary'); if(!el) return;
   const cam=currentCamera();
-  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · f/${state.aperture} · ISO ${state.cameraIso} · ${state.cameraShutter} · ${state.distanceCm} cm`;
+  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · ${gammaShortLabel(cam)}`;
 }
 function clampApertureToRange(compensate=true){
   const vals=apertureRangeValues();
@@ -446,15 +495,8 @@ function clampApertureToRange(compensate=true){
 function renderGlobalCameraControls(){
   const card=document.getElementById('cameraCard'); if(card) card.classList.toggle('open',!!state.cameraOpen);
   const f=document.getElementById('focalInput'); if(f) f.value=state.focal;
-  const a=document.getElementById('globalAperture'); if(a){ a.innerHTML=optionList(apertureRangeValues(),state.aperture,'f/'); a.value=String(state.aperture); }
-  const gi=document.getElementById('globalIso'); if(gi){ gi.innerHTML=optionList(isoRangeValues(),state.cameraIso,'ISO '); gi.value=String(state.cameraIso); }
-  const sh=document.getElementById('globalShutter'); if(sh){ sh.innerHTML=optionList(shutters,state.cameraShutter); sh.value=String(state.cameraShutter); }
-  const d=document.getElementById('globalDistance'); if(d) d.value=state.distanceCm;
-  const imin=document.getElementById('globalIsoMin'); if(imin){imin.innerHTML=optionList(isos,state.cameraLimits.isoMin,'ISO ');imin.value=state.cameraLimits.isoMin;}
-  const imax=document.getElementById('globalIsoMax'); if(imax){imax.innerHTML=optionList(isos,state.cameraLimits.isoMax,'ISO ');imax.value=state.cameraLimits.isoMax;}
-  const amin=document.getElementById('globalApertureMin'); if(amin){amin.innerHTML=optionList(apertures,state.cameraLimits.apertureMin,'f/');amin.value=state.cameraLimits.apertureMin;}
-  const amax=document.getElementById('globalApertureMax'); if(amax){amax.innerHTML=optionList(apertures,state.cameraLimits.apertureMax,'f/');amax.value=state.cameraLimits.apertureMax;}
   renderCameraSummary();
+  renderGammaButtons();
   syncGlobalLimitState();
 }
 function syncGlobalLimitState(){
@@ -466,14 +508,7 @@ function bindGlobal(){
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
   document.getElementById('focalInput').addEventListener('input',e=>{state.focal=Math.max(1,Number(e.target.value)||35); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
   document.getElementById('focalPresets').addEventListener('click',e=>{const btn=e.target.closest('[data-focalpreset]'); if(!btn)return; state.focal=Number(btn.dataset.focalpreset); document.getElementById('focalInput').value=state.focal; save(); renderTopFocal(); renderCameraSummary(); updateLive();});
-  document.getElementById('globalAperture').addEventListener('change',e=>globalApertureChanged(e.target.value));
-  document.getElementById('globalIso').addEventListener('change',e=>globalIsoChanged(e.target.value));
-  document.getElementById('globalShutter').addEventListener('change',e=>globalShutterChanged(e.target.value));
-  document.getElementById('globalDistance').addEventListener('input',e=>{state.distanceCm=Math.max(10,Number(e.target.value)||10); save(); renderCameraSummary(); updateDOF();});
-  document.getElementById('globalIsoMin').addEventListener('change',e=>changeIsoBound('min',e.target.value));
-  document.getElementById('globalIsoMax').addEventListener('change',e=>changeIsoBound('max',e.target.value));
-  document.getElementById('globalApertureMin').addEventListener('change',e=>changeApertureBound('min',e.target.value));
-  document.getElementById('globalApertureMax').addEventListener('change',e=>changeApertureBound('max',e.target.value));
+  const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
   document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);save();renderCustomize();renderModules();});

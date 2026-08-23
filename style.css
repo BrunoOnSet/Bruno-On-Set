@@ -289,3 +289,13 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .bos-signal-quality-labels{display:flex;justify-content:space-between;gap:10px;margin-top:5px;color:var(--muted);font-size:9px;font-weight:800;line-height:1.25}.bos-signal-quality-labels span:last-child{text-align:right}
 .bos-terrain-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}.bos-terrain-strip>div{padding:9px 8px;border:1px solid var(--line);border-radius:11px;background:var(--panel);min-width:0;opacity:.58}.bos-terrain-strip>div b{display:block;font-size:9px;line-height:1.2;font-weight:900}.bos-terrain-strip>div small{display:block;margin-top:4px;font-size:8px;line-height:1.2;color:var(--muted)}.bos-terrain-strip>div.active{opacity:1;border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1px var(--blue-soft)}
 @media(max-width:520px){.bos-wave-marker b{display:none}.bos-terrain-strip{grid-template-columns:1fr;gap:5px}.bos-terrain-strip>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px}.bos-terrain-strip>div small{margin-top:0;text-align:right}.bos-expo-quality-card strong{font-size:20px}}
+
+
+/* V25 — Caméra simplifiée : choix gamma seulement */
+.camera-gamma-block{display:grid;gap:12px;padding-top:6px}
+.gamma-chips{display:flex;flex-wrap:wrap;gap:10px}
+.gamma-chip{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:12px 20px;font-size:13px;font-weight:900;letter-spacing:-.01em;cursor:pointer}
+.gamma-chip.active{background:#A8C7D0;border-color:#A8C7D0;color:#1B2429}
+.gamma-info{background:#DDE4E6;border-radius:14px;padding:16px 18px;color:#1E2328;font-size:14px;font-weight:850;line-height:1.35}
+:root[data-theme="dark"] .gamma-chip.active{background:var(--blue);border-color:var(--blue);color:#F3F3F0}
+:root[data-theme="dark"] .gamma-info{background:#243038;color:#F3F3F0}
