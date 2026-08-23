@@ -125,3 +125,5 @@ V38 : EXPO sous-titré « DYNAMIQUE DE L’IMAGE ». Ajout d’un mode de saisie
 V39 : correction du calcul des ratios FRAME. Les formats sont désormais traités comme des masques dans le cadre natif : 16:9 horizontal pour les formats paysage/carré (ex. 1:1 = cache latéral dans le 16:9), et 9:16 après rotation physique de la caméra pour les formats portrait. Le champ horizontal et vertical est calculé à partir de la zone réellement conservée du capteur.
 
 V40 : sous-titre EXPO harmonisé avec les autres modules : « Dynamique de l'image ».
+
+V41 — Sélecteur de projecteur façon BOS LIGHT (Marque → Gamme → Puissance/Modèle), réglages caméra globaux simplifiés à Marque/Caméra/Gamma, et vérification de mise à jour limitée à une fois par heure maximum. Service worker/cache alignés sur V41.

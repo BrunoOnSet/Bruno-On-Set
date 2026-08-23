@@ -412,3 +412,39 @@ input[type="range"],
 .free-value-input{width:76px!important;min-height:30px!important;height:30px!important;padding:3px 7px!important;border-radius:8px!important;font-size:14px!important;font-weight:850!important;text-align:right;background:var(--field-bg)!important;border:1px solid var(--accent)!important;box-shadow:0 0 0 2px var(--accent-soft)!important}
 .expo-free-readout{font-size:inherit;min-width:36px;padding:0 3px}
 .expo-free-readout .free-value-input{width:68px!important;font-size:18px!important}
+
+
+/* V41 — Sélecteur projecteur façon BOS LIGHT + caméra globale simplifiée */
+.model-picker-btn{
+  width:100%;min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  text-align:left;padding:9px 11px 9px 13px;border:1px solid var(--line);border-radius:12px;
+  background:var(--input);color:var(--text);cursor:pointer;
+}
+.model-picker-btn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800}
+.model-picker-btn strong{flex:0 0 auto;color:var(--blue);font-size:10px;font-weight:900}
+.model-picker-btn:hover{border-color:var(--blue);background:var(--blue-soft)}
+.model-picker-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.add-dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:min(920px,calc(100vw - 30px));color:var(--text)}
+.add-dialog::backdrop{background:rgba(5,10,18,.58);backdrop-filter:blur(4px)}
+.dialog-shell{background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:0 26px 80px rgba(0,0,0,.25);padding:18px;max-height:min(760px,calc(100vh - 34px));overflow:auto}
+.dialog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.dialog-head h2{margin:2px 0 0;font-size:20px;color:var(--text)}
+.dialog-kicker{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+.dialog-close{width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--muted);font-size:25px;font-weight:500;cursor:pointer}
+.chooser-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.chooser-context{font-size:12px;font-weight:800;color:var(--muted)}
+.catalog-badge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:var(--blue);background:var(--blue-soft);border:1px solid color-mix(in srgb,var(--blue) 35%,var(--line));border-radius:9px;padding:7px 9px}
+.choice-section{border-top:1px solid var(--line);padding:14px 4px 12px}
+.choice-section:first-of-type{border-top:0;padding-top:2px}
+.choice-label{font-size:10px;font-weight:900;letter-spacing:.13em;color:var(--text);margin:0 0 10px 3px}
+.choice-buttons{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:8px}
+.choice-buttons.two{grid-template-columns:repeat(2,minmax(150px,1fr));max-width:520px}
+.choice-buttons.models{grid-template-columns:repeat(5,minmax(115px,1fr))}
+.choice-btn{min-height:42px;border-radius:11px;background:var(--chip-bg);border:1px solid var(--line);color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.02em;cursor:pointer}
+.choice-btn:hover{border-color:var(--blue);color:var(--blue)}
+.choice-btn.active{background:var(--chip-active-bg);color:var(--chip-active-text);border-color:var(--chip-active-bg)}
+.chooser-footnote{font-size:10px;color:var(--muted);padding:6px 4px 0}
+@media(max-width:1100px){.choice-buttons.models{grid-template-columns:repeat(4,minmax(105px,1fr))}}
+@media(max-width:900px){.choice-buttons{grid-template-columns:repeat(2,minmax(120px,1fr))}.choice-buttons.models{grid-template-columns:repeat(3,minmax(105px,1fr))}.add-dialog{width:calc(100vw - 18px)}.dialog-shell{padding:14px;border-radius:20px}}
+@media(max-width:560px){.chooser-topline{align-items:flex-start;flex-direction:column}.choice-buttons.models{grid-template-columns:repeat(2,minmax(100px,1fr))}.catalog-badge{display:none}.choice-buttons.two{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}}

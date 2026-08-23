@@ -7,9 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>BOS — Bruno OnSet</title>
-  <link rel="manifest" href="manifest.webmanifest?v=37" />
+  <link rel="manifest" href="manifest.webmanifest?v=41" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=39" />
+  <link rel="stylesheet" href="style.css?v=41" />
 </head>
 <body>
   <main class="shell">
@@ -49,27 +49,6 @@
           </div>
         </div>
 
-        <div class="focal-block camera-range-block">
-          <div class="camera-range-slider">
-            <span>FOCALE</span>
-            <input id="focalSlider" type="range" min="9" max="200" step="1" value="35" aria-label="Focale de 9 à 200 mm">
-            <strong id="focalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">35 mm</strong>
-          </div>
-        </div>
-
-        <div class="camera-shooting-grid camera-shooting-grid-v33">
-          <div class="camera-range-slider camera-aperture-range">
-            <span>DIAPH</span>
-            <input id="globalApertureSlider" type="range" min="0" max="11" step="1" value="5" aria-label="Diaphragme de f/1,0 à f/22">
-            <strong id="globalApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">f/2.8</strong>
-          </div>
-          <div class="camera-range-slider camera-distance-range">
-            <span>DISTANCE SUJET</span>
-            <input id="globalDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="2.50" aria-label="Distance sujet de 0,30 à 15 mètres">
-            <strong id="globalDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">2,50 m</strong>
-          </div>
-        </div>
-
         <div class="camera-gamma-block">
           <span class="field-label">Gamma</span>
           <div class="gamma-chips" id="gammaMode" aria-label="Choisir la courbe gamma"></div>
@@ -80,7 +59,7 @@
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V40</footer>
+    <footer class="footer">BOS — Bruno OnSet · V41</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">
@@ -98,6 +77,37 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=39" defer></script>
+
+
+  <dialog id="projectorDialog" class="add-dialog projector-dialog">
+    <div class="dialog-shell">
+      <div class="dialog-head">
+        <div>
+          <div class="dialog-kicker">Changer</div>
+          <h2>Changer de projecteur</h2>
+        </div>
+        <button class="dialog-close" id="closeProjectorDialogBtn" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="chooser-topline">
+        <span class="chooser-context">Key Light</span>
+        <div class="catalog-badge">Catalogue BOS Light</div>
+      </div>
+      <div class="choice-section">
+        <div class="choice-label">MARQUE</div>
+        <div class="choice-buttons two" id="pickerBrandChoices"></div>
+      </div>
+      <div class="choice-section">
+        <div class="choice-label">GAMME</div>
+        <div class="choice-buttons" id="pickerFamilyChoices"></div>
+      </div>
+      <div class="choice-section">
+        <div class="choice-label">PUISSANCE / MODÈLE</div>
+        <div class="choice-buttons models" id="pickerModelChoices"></div>
+      </div>
+      <div class="chooser-footnote" id="pickerCatalogCount"></div>
+    </div>
+  </dialog>
+
+  <script src="app.js?v=41" defer></script>
 </body>
 </html>
