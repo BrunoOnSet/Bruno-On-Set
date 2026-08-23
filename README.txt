@@ -85,3 +85,5 @@ V23 :
 - Aperçu simplifié du plan vu du dessus, avec caméras, sujets, projecteurs, faisceaux et décor.
 - Bouton ACTUALISER pour relire la bibliothèque PLAN.
 - Bouton IMPORTER comme solution de secours pour des fichiers `.bosplan.json`; plusieurs fichiers peuvent être importés et restent navigables dans Bruno OnSet.
+
+V24 : module EXPO simplifié autour de l’explorateur de dynamique S-Log3 inspiré de BOS EXPO V3.62. Le module affiche uniquement le schéma waveform 0–100 %, le curseur, la qualité de signal attendue et les repères terrain. EXPO reste en dernier par défaut et porte toujours le sous-titre BIENTÔT DISPONIBLE.

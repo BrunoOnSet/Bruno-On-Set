@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v23';
+const STORAGE_KEY = 'bos-cockpit-v24';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -33,7 +33,8 @@ const defaultState = {
   expo: {
     values: { aperture: '2.8', iso: '800', shutter: '1/50', nd: '0' },
     locks: { aperture: false, iso: false, shutter: false, nd: false },
-    limitWarning: null
+    limitWarning: null,
+    read: 41
   }
 };
 
@@ -99,6 +100,7 @@ function normalizeState(){
   if(!state.expo.locks) state.expo.locks = clone(defaultState.expo.locks);
   for(const k of ['aperture','iso','shutter','nd']) state.expo.locks[k] = !!state.expo.locks[k];
   if(state.expo.limitWarning === undefined) state.expo.limitWarning = null;
+  state.expo.read = Math.round(Math.max(0, Math.min(100, Number(state.expo.read ?? 41) || 0)));
   if(!state.plan || typeof state.plan !== 'object') state.plan = clone(defaultState.plan);
   if(state.plan.selectedId === undefined) state.plan.selectedId = null;
   const validModules = defaultState.layout;
@@ -489,9 +491,151 @@ function renderBody(id){
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div><div class="luxgrid"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
-  if(id==='expo') return `<div class="coming-soon"><strong>BIENTÔT DISPONIBLE</strong><span>La compensation EXPO est encore en cours de finalisation.</span></div>`;
+  if(id==='expo') return renderExpoWaveformBody();
   return '';
 }
+
+function slog3CodeValueBos(linear){
+  const x=Math.max(0,Number(linear)||0);
+  if(x>=0.01125)return 420 + Math.log10((x+0.01)/(0.18+0.01))*261.5;
+  return x*(171.2102946929-95)/0.01125+95;
+}
+function slog3IreForLinearBos(linear){ return (slog3CodeValueBos(linear)-64)/(940-64)*100; }
+function slog3IreFromStopsBos(stops){ return slog3IreForLinearBos(0.18*Math.pow(2,Number(stops)||0)); }
+function slog3IreForReflectanceBos(reflectance){ return slog3IreForLinearBos(Number(reflectance)||0); }
+function bosExpoWaveGuide(){
+  const grey=slog3IreFromStopsBos(0),toe=slog3IreFromStopsBos(-4),m1=slog3IreFromStopsBos(-1),p3=slog3IreFromStopsBos(3),p5=slog3IreFromStopsBos(5),p6=slog3IreFromStopsBos(6);
+  return {
+    toe,grey,m1,p3,p5,p6,
+    zones:[
+      {min:0,max:toe,label:'PIED / TRÈS BASSES'},
+      {min:toe,max:m1,label:'OMBRES LOG'},
+      {min:m1,max:p3,label:'MÉDIUMS'},
+      {min:p3,max:p5,label:'HAUTES'},
+      {min:p5,max:p6,label:'TRÈS HAUTES'},
+      {min:p6,max:100.01,label:'EXTRÊMES'}
+    ],
+    markers:[
+      {value:toe,label:'≈12 %'},
+      {value:grey,label:'≈41 %'},
+      {value:slog3IreForReflectanceBos(.9),label:'≈61 %'},
+      {value:p6,label:'≈94 %'}
+    ],
+    stops:Array.from({length:11},(_,i)=>({stop:i-4,percent:slog3IreFromStopsBos(i-4)}))
+  };
+}
+function bosExpoWaveZone(value){
+  const g=bosExpoWaveGuide(),v=Math.max(0,Math.min(100,Number(value)||0));
+  return g.zones.find(z=>v>=z.min&&v<z.max)||g.zones[g.zones.length-1];
+}
+function bosExpoStopFromSignal(signal){
+  const target=Math.max(0,Math.min(100,Number(signal)||0));
+  let lo=-10,hi=10;
+  for(let i=0;i<60;i++){
+    const mid=(lo+hi)/2;
+    if(slog3IreFromStopsBos(mid)<target)lo=mid;else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+function bosExpoSignalInfo(value){
+  const v=Math.max(0,Math.min(100,Number(value)||0)),zone=bosExpoWaveZone(v),label=zone.label;
+  let quality='À INTERPRÉTER',text='La qualité finale dépend du capteur, de l’ISO/EI et de la quantité réelle de lumière.';
+  if(/PIED|TRÈS BASSES/.test(label)){
+    quality='FRAGILE';
+    text='Très peu de signal utile : le bruit et la perte de détail deviennent plus visibles.';
+  }else if(/OMBRE/.test(label)){
+    quality='CORRECTE À SURVEILLER';
+    text='Détail exploitable, mais la propreté dépend davantage du capteur, de l’ISO/EI et du niveau réel de lumière.';
+  }else if(/MÉDIUM/.test(label)){
+    quality='TRÈS BONNE';
+    text='Zone de signal robuste et facile à travailler, sous réserve du rendu artistique recherché.';
+  }else if(/TRÈS HAUTES/.test(label)){
+    quality='COMPRIMÉE';
+    text='La courbe consacre moins de variation de signal aux écarts de lumière ; les nuances deviennent plus serrées.';
+  }else if(/HAUTES/.test(label)){
+    quality='BONNE';
+    text='Signal encore confortable, avec une compression croissante en allant vers le haut de la courbe.';
+  }else if(/EXTRÊME/.test(label)){
+    quality='TRÈS COMPRIMÉE / LIMITE';
+    text='Très faible marge de signal : risque de perte rapide de nuances ou de dépassement du repère documenté.';
+  }
+  const progress=Math.max(0,Math.min(1,(v-zone.min)/Math.max(.001,zone.max-zone.min)));
+  const compression=/TRÈS HAUTES|EXTRÊME/.test(label);
+  const trendNote=compression
+    ? 'Dans cette zone, monter encore le signal ne signifie pas « meilleure image » : la marge diminue et la compression augmente.'
+    : 'À zone comparable, placer le signal plus haut donne généralement davantage de signal utile et une image plus robuste, tant qu’on ne sacrifie pas les hautes lumières.';
+  return {zone,quality,text:`${text} ${trendNote}`,progress,compression};
+}
+function bosExpoTerrainKey(value){
+  const stop=bosExpoStopFromSignal(value);
+  if(stop>=2.5)return 'window';
+  if(stop>=.75)return 'bright-face';
+  if(stop>=-.75)return 'dark-face';
+  if(stop>=-2)return 'shadow-detail';
+  return 'shadow-low';
+}
+function bosExpoTerrainNote(key){
+  const labels={
+    window:'Exemples typiques : fenêtre, ciel clair, source visible ou reflet très lumineux.',
+    'bright-face':'Exemples typiques : visage très éclairé, peau claire lumineuse, matière claire importante.',
+    'dark-face':'Exemples typiques : visage plus sombre, sujet principal volontairement dense, matière en médiums bas.',
+    'shadow-detail':'Exemples typiques : ombre avec matière, côté non éclairé d’un visage, décor sombre dont tu veux garder le détail.',
+    'shadow-low':'Exemples typiques : ombre profonde, fond sombre ou zone dont le détail est secondaire.'
+  };
+  return `${labels[key]} Repère indicatif : le placement dépend du rendu recherché et des conditions de tournage.`;
+}
+function renderExpoWaveformBody(){
+  const g=bosExpoWaveGuide(),v=Math.round(Math.max(0,Math.min(100,Number(state.expo.read)||0))),info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
+  const segments=g.zones.map((z,i)=>`<span class="bos-wave-seg bos-wave-seg-${(i%5)+1}" style="left:${Math.max(0,z.min)}%;width:${Math.max(.15,Math.min(100,z.max)-Math.max(0,z.min))}%"></span>`).join('');
+  const bands=g.stops.slice(0,-1).map((a,i)=>{const b=g.stops[i+1],left=Math.max(0,a.percent),right=Math.min(100,b.percent);return `<span class="bos-wave-stop-band ${i%2?'alt':''}" style="left:${left}%;width:${Math.max(.1,right-left)}%"></span>`}).join('');
+  const ticks=g.stops.map((x,i)=>{const pos=Math.max(0,Math.min(100,x.percent)),label=x.stop===0?'0':`${x.stop>0?'+':''}${x.stop}`,edge=i===0?' edge-left':i===g.stops.length-1?' edge-right':'';return `<span class="bos-wave-stop-tick${edge}" style="left:${pos}%"><i></i><b>${label}</b></span>`}).join('');
+  const markers=g.markers.map(m=>`<span class="bos-wave-marker" style="left:${Math.max(0,Math.min(100,m.value))}%"><i></i><b>${m.label}</b></span>`).join('');
+  return `<div class="bos-expo-wave">
+    <div class="bos-expo-wave-head"><div class="bos-expo-wave-kicker">EXPLORER LA DYNAMIQUE DE L’IMAGE</div><div class="bos-expo-wave-value"><strong id="expoWaveValue">${v}</strong><span>%</span></div></div>
+    <div class="bos-wave-shell">
+      <div class="bos-wave-scale">
+        <div class="bos-wave-segments">${segments}</div>
+        <div class="bos-wave-stop-bands">${bands}</div>
+        <div class="bos-wave-markers">${markers}</div>
+        <div class="bos-wave-stop-ticks">${ticks}</div>
+        <div class="bos-wave-cursor" id="expoWaveCursor" style="left:${v}%"><span></span></div>
+      </div>
+      <div class="bos-wave-axis"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
+      <div class="bos-wave-help">Chaque espace entre deux traits = 1 diaph de lumière réelle (×2 / ÷2).</div>
+      <label class="bos-wave-slider-label" for="expoWaveSlider">NIVEAU LU SUR LE WAVEFORM</label>
+      <input id="expoWaveSlider" class="bos-wave-slider" type="range" min="0" max="100" step="1" value="${v}">
+    </div>
+    <div class="bos-expo-quality-card">
+      <span>SIGNAL / QUALITÉ ATTENDUE</span>
+      <strong id="expoWaveQuality">${esc(info.quality)}</strong>
+      <small id="expoWaveQualityText">${esc(info.text)}</small>
+      <div class="bos-signal-quality-visual ${info.compression?'compression':'cleaner'}" id="expoWaveQualityVisual"><div class="bos-signal-noise"></div><div class="bos-signal-compression"></div><i id="expoWaveQualityCursor" style="left:${5+info.progress*90}%"></i></div>
+      <div class="bos-signal-quality-labels"><span id="expoWaveQualityLeft">${info.compression?'Plus de marge':'Bas de zone · plus fragile'}</span><span id="expoWaveQualityRight">${info.compression?'Plus comprimé':'Haut de zone · plus robuste'}</span></div>
+    </div>
+    <div class="bos-expo-terrain-card">
+      <span>REPÈRES TERRAIN · EXEMPLES INDICATIFS</span>
+      <div class="bos-terrain-strip" id="expoTerrainExamples">
+        <div data-terrain="shadow-low" class="${terrain==='shadow-low'?'active':''}"><b>Ombre avec peu de détails</b><small>Très sombre</small></div>
+        <div data-terrain="shadow-detail" class="${terrain==='shadow-detail'?'active':''}"><b>Ombre avec détails</b><small>Sombre</small></div>
+        <div data-terrain="dark-face" class="${terrain==='dark-face'?'active':''}"><b>Visage sombre</b><small>Médium bas</small></div>
+        <div data-terrain="bright-face" class="${terrain==='bright-face'?'active':''}"><b>Visage lumineux</b><small>Clair</small></div>
+        <div data-terrain="window" class="${terrain==='window'?'active':''}"><b>Fenêtre / ciel</b><small>Très clair</small></div>
+      </div>
+      <small class="bos-terrain-note" id="expoTerrainNote">${esc(bosExpoTerrainNote(terrain))}</small>
+    </div>
+  </div>`;
+}
+function updateExpoWaveformUi(value){
+  const v=Math.round(Math.max(0,Math.min(100,Number(value)||0))); state.expo.read=v;
+  const info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
+  const valueEl=document.getElementById('expoWaveValue'),cursor=document.getElementById('expoWaveCursor'),quality=document.getElementById('expoWaveQuality'),qualityText=document.getElementById('expoWaveQualityText'),visual=document.getElementById('expoWaveQualityVisual'),qualityCursor=document.getElementById('expoWaveQualityCursor'),left=document.getElementById('expoWaveQualityLeft'),right=document.getElementById('expoWaveQualityRight'),note=document.getElementById('expoTerrainNote');
+  if(valueEl)valueEl.textContent=String(v); if(cursor)cursor.style.left=`${v}%`; if(quality)quality.textContent=info.quality; if(qualityText)qualityText.textContent=info.text;
+  if(visual){visual.classList.toggle('compression',info.compression);visual.classList.toggle('cleaner',!info.compression)}
+  if(qualityCursor)qualityCursor.style.left=`${5+info.progress*90}%`; if(left)left.textContent=info.compression?'Plus de marge':'Bas de zone · plus fragile'; if(right)right.textContent=info.compression?'Plus comprimé':'Haut de zone · plus robuste';
+  document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(el=>el.classList.toggle('active',el.dataset.terrain===terrain)); if(note)note.textContent=bosExpoTerrainNote(terrain);
+  save();
+}
+
 function expoLabel(k){ return {aperture:'Diaph',iso:'ISO',shutter:'Shutter',nd:'ND'}[k]; }
 function currentExpoValue(k){ return String(state.expo.values[k]); }
 function formatThousandsFr(v){ return Number(v).toLocaleString('fr-FR').replace(/\u202f/g,' '); }
@@ -559,6 +703,7 @@ function bindModules(){
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
+  const wave=document.getElementById('expoWaveSlider'); if(wave)wave.addEventListener('input',e=>updateExpoWaveformUi(e.target.value));
   const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
   document.querySelectorAll('[data-expolock]').forEach(b=>b.addEventListener('click',()=>toggleExpoLock(b.dataset.expolock)));
   document.querySelectorAll('[data-expokey]').forEach(s=>s.addEventListener('change',e=>expoChanged(e.target.dataset.expokey,e.target.value)));
