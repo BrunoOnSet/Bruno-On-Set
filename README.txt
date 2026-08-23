@@ -119,3 +119,5 @@ V35 : ajout d'un réglage HAUTEUR CAMÉRA dans FRAME (0,50–2,50 m) qui déplac
 V36 : ajout d’une barre FOCALE dans FRAME, au-dessus de RECUL. Elle est synchronisée en temps réel avec la focale globale et la barre FOCALE de DOF (9 à 200 mm, pas de 1 mm).
 
 V37 : correction du système de mise à jour. La V36 avait APP_VERSION resté sur V35 alors que version.json et le service worker étaient en V36, ce qui pouvait provoquer des rechargements répétés. V37 aligne tous les numéros, compare désormais les builds numériquement, ajoute un garde anti-boucle, supprime la navigation forcée depuis l'activation du service worker et espace la vérification périodique à 5 minutes.
+
+V38 : EXPO sous-titré « DYNAMIQUE DE L’IMAGE ». Ajout d’un mode de saisie libre : cliquer sur la valeur affichée d’une barre horizontale ouvre un champ numérique. Focale, diaph, distance/recul, hauteur caméra et waveform peuvent ainsi recevoir une valeur précise hors des pas du slider ; les calculs synchronisés utilisent la valeur exacte.

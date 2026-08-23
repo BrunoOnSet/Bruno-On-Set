@@ -404,3 +404,11 @@ input[type="range"],
 /* V35 — hauteur caméra FRAME + ratio portrait = rotation physique caméra */
 .bos-frame-height-slider>span{min-width:104px}
 @media(max-width:560px){.bos-frame-height-slider>span{min-width:92px;font-size:9px;letter-spacing:.08em}}
+
+
+/* V38 — valeur libre au clic sur les chiffres des sliders */
+.free-value-readout{cursor:text;display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;min-width:52px;border-radius:8px;padding:2px 5px;transition:background .15s ease,outline-color .15s ease}
+.free-value-readout:hover,.free-value-readout:focus-visible{background:var(--accent-soft);outline:1px solid var(--accent);outline-offset:1px}
+.free-value-input{width:76px!important;min-height:30px!important;height:30px!important;padding:3px 7px!important;border-radius:8px!important;font-size:14px!important;font-weight:850!important;text-align:right;background:var(--field-bg)!important;border:1px solid var(--accent)!important;box-shadow:0 0 0 2px var(--accent-soft)!important}
+.expo-free-readout{font-size:inherit;min-width:36px;padding:0 3px}
+.expo-free-readout .free-value-input{width:68px!important;font-size:18px!important}

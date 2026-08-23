@@ -9,7 +9,7 @@
   <title>BOS — Bruno OnSet</title>
   <link rel="manifest" href="manifest.webmanifest?v=37" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=37" />
+  <link rel="stylesheet" href="style.css?v=38" />
 </head>
 <body>
   <main class="shell">
@@ -53,7 +53,7 @@
           <div class="camera-range-slider">
             <span>FOCALE</span>
             <input id="focalSlider" type="range" min="9" max="200" step="1" value="35" aria-label="Focale de 9 à 200 mm">
-            <strong id="focalReadout">35 mm</strong>
+            <strong id="focalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">35 mm</strong>
           </div>
         </div>
 
@@ -61,12 +61,12 @@
           <div class="camera-range-slider camera-aperture-range">
             <span>DIAPH</span>
             <input id="globalApertureSlider" type="range" min="0" max="11" step="1" value="5" aria-label="Diaphragme de f/1,0 à f/22">
-            <strong id="globalApertureReadout">f/2.8</strong>
+            <strong id="globalApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">f/2.8</strong>
           </div>
           <div class="camera-range-slider camera-distance-range">
             <span>DISTANCE SUJET</span>
             <input id="globalDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="2.50" aria-label="Distance sujet de 0,30 à 15 mètres">
-            <strong id="globalDistanceReadout">2,50 m</strong>
+            <strong id="globalDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">2,50 m</strong>
           </div>
         </div>
 
@@ -80,7 +80,7 @@
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V37</footer>
+    <footer class="footer">BOS — Bruno OnSet · V38</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">
@@ -98,6 +98,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=37" defer></script>
+  <script src="app.js?v=38" defer></script>
 </body>
 </html>

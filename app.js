@@ -1,7 +1,7 @@
-const APP_VERSION = 'V37';
-const APP_BUILD = 37;
-const STORAGE_KEY = 'bos-cockpit-v37';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V38';
+const APP_BUILD = 38;
+const STORAGE_KEY = 'bos-cockpit-v38';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -61,7 +61,7 @@ const moduleMeta = {
   light: ['LIGHT', 'Projecteurs et Lux'],
   media: ['MEDIA', 'Temps d’enregistrement'],
   plan: ['PLAN', 'Plans de feu'],
-  expo: ['EXPO', 'BIENTÔT DISPONIBLE']
+  expo: ['EXPO', 'DYNAMIQUE DE L’IMAGE']
 };
 const APP_LINKS = { frame: '#', dof: '#', light: '#', media: '#', plan: '#', expo: '#' };
 
@@ -104,7 +104,7 @@ function normalizeState(){
   if(!state.cameraShutter) state.cameraShutter = '1/50';
   if(!state.cameraIso) state.cameraIso = '800';
   if(typeof state.cameraOpen !== 'boolean') state.cameraOpen = true;
-  state.distanceCm = Math.max(30, Math.round((Number(state.distanceCm) || 250)/10)*10);
+  state.distanceCm = Math.max(30, Number(state.distanceCm) || 250);
   if(!state.media.unit) state.media.unit = 'Mb/s';
   if(!state.expo) state.expo = clone(defaultState.expo);
   if(!state.expo.values) state.expo.values = clone(defaultState.expo.values);
@@ -120,7 +120,7 @@ function normalizeState(){
   if(!state.expo.locks) state.expo.locks = clone(defaultState.expo.locks);
   for(const k of ['aperture','iso','shutter','nd']) state.expo.locks[k] = !!state.expo.locks[k];
   if(state.expo.limitWarning === undefined) state.expo.limitWarning = null;
-  state.expo.read = Math.round(Math.max(0, Math.min(100, Number(state.expo.read ?? 41) || 0)));
+  state.expo.read = Math.max(0, Math.min(100, Number(state.expo.read ?? 41) || 0));
   if(!state.plan || typeof state.plan !== 'object') state.plan = clone(defaultState.plan);
   if(state.plan.selectedId === undefined) state.plan.selectedId = null;
   const validModules = defaultState.layout;
@@ -640,10 +640,80 @@ function closestPreviewPlan(scale){
 function frameFigureMarkup(){
   return `<img class="bos-frame-person" src="assets/mannequin-preview.png" alt="Mannequin de cadrage FRAME" draggable="false">`;
 }
+function trimFrNumber(value,maxDigits=2){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return '—';
+  return n.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:maxDigits});
+}
+function focalReadoutText(value=state.focal){ return `${trimFrNumber(value,2)} mm`; }
+function apertureReadoutText(value=state.aperture){ return `f/${trimFrNumber(value,2)}`; }
+function distanceReadoutText(valueM=(Number(state.distanceCm)||250)/100){ return `${Number(valueM).toFixed(2).replace('.',',')} m`; }
+function heightReadoutText(value=state.frameCameraHeightM){ return `${Number(value||1.55).toFixed(2).replace('.',',')} m`; }
+function nearestApertureIndex(value=state.aperture){
+  const target=Number(value)||2.8;
+  let best=0,diff=Infinity;
+  apertures.forEach((v,i)=>{const d=Math.abs(Number(v)-target);if(d<diff){diff=d;best=i;}});
+  return best;
+}
+function freeValueConfig(key){
+  if(key==='focal') return {value:Number(state.focal)||35,min:9,max:200,step:'any',label:'Focale'};
+  if(key==='aperture') return {value:Number(state.aperture)||2.8,min:1,max:22,step:'any',label:'Diaph'};
+  if(key==='distance') return {value:(Number(state.distanceCm)||250)/100,min:.30,max:50,step:'any',label:'Distance'};
+  if(key==='cameraHeight') return {value:Number(state.frameCameraHeightM)||1.55,min:.50,max:2.50,step:'any',label:'Hauteur caméra'};
+  if(key==='waveform') return {value:Number(state.expo?.read)||0,min:0,max:100,step:'any',label:'Waveform'};
+  return null;
+}
+function applyFreeValue(key,value){
+  const n=Number(String(value).replace(',','.'));
+  if(!Number.isFinite(n)) return;
+  if(key==='focal') setLinkedFocal(n,true);
+  else if(key==='aperture') setLinkedAperture(n,true);
+  else if(key==='distance') setLinkedDistanceMeters(n,true);
+  else if(key==='cameraHeight') setFrameCameraHeight(n,true);
+  else if(key==='waveform') updateExpoWaveformUi(n,true);
+}
+function beginFreeValueEdit(readout){
+  if(!readout || readout.querySelector('input')) return;
+  const key=readout.dataset.freeControl,cfg=freeValueConfig(key); if(!cfg) return;
+  const previous=readout.textContent;
+  const input=document.createElement('input');
+  input.type='number'; input.inputMode='decimal'; input.step=cfg.step; input.min=String(cfg.min); input.max=String(cfg.max);
+  input.className='free-value-input'; input.value=String(cfg.value);
+  input.setAttribute('aria-label',`${cfg.label} libre`);
+  readout.textContent=''; readout.appendChild(input); input.focus(); input.select();
+  let done=false;
+  const finish=(commit)=>{
+    if(done) return; done=true;
+    const value=input.value;
+    if(commit && value!=='') applyFreeValue(key,value);
+    else readout.textContent=previous;
+  };
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();finish(true);input.blur();}
+    else if(e.key==='Escape'){e.preventDefault();finish(false);input.blur();}
+  });
+  input.addEventListener('blur',()=>finish(true),{once:true});
+}
+function bindFreeValueEditing(){
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.free-value-input')) return;
+    const readout=e.target.closest('[data-free-control]'); if(readout) beginFreeValueEdit(readout);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter' && e.key!==' ') return;
+    const readout=e.target.closest?.('[data-free-control]');
+    if(readout && !readout.querySelector('input')){e.preventDefault();beginFreeValueEdit(readout);}
+  });
+}
+function setFrameCameraHeight(value,free=false){
+  let v=Math.max(.50,Math.min(2.50,Number(value)||1.55));
+  v=free ? Math.round(v*100)/100 : Math.round(v/0.05)*0.05;
+  state.frameCameraHeightM=v; save(); updateFrame();
+}
 function renderCameraSummary(){
   const el=document.getElementById('cameraSummary'); if(!el) return;
   const cam=currentCamera();
-  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · f/${state.aperture} · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m`;
+  el.textContent=`${cam?.name||'—'} · ${focalReadoutText(state.focal)} · ${apertureReadoutText(state.aperture)} · ${distanceReadoutText(state.distanceCm/100)}`;
 }
 function clampApertureToRange(compensate=true){
   const vals=apertureRangeValues();
@@ -661,51 +731,53 @@ function renderGlobalCameraControls(){
   const card=document.getElementById('cameraCard'); if(card) card.classList.toggle('open',!!state.cameraOpen);
   renderTopFocal();
   const apertureSlider=document.getElementById('globalApertureSlider'),apertureReadout=document.getElementById('globalApertureReadout');
-  const apertureIdx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)));
+  const apertureIdx=nearestApertureIndex(state.aperture);
   if(apertureSlider) apertureSlider.value=String(apertureIdx);
-  if(apertureReadout) apertureReadout.textContent=`f/${state.aperture}`;
+  if(apertureReadout) apertureReadout.textContent=apertureReadoutText(state.aperture);
   syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
   renderCameraSummary(); renderGammaButtons(); renderRatioDialog(); syncGlobalLimitState();
 }
 function syncGlobalLimitState(){
   /* Les alertes de limite appartiennent uniquement au module EXPO. */
 }
-function setLinkedDistanceMeters(value){
-  const raw=Math.max(.30,Math.min(50,Number(value)||.30));
-  const v=Math.round(raw*10)/10;
-  state.distanceCm=Math.round(v*100);
+function setLinkedDistanceMeters(value,free=false){
+  let v=Math.max(.30,Math.min(50,Number(value)||.30));
+  v=free ? Math.round(v*100)/100 : Math.round(v*10)/10;
+  state.distanceCm=v*100;
   syncDistanceRange('globalDistanceSlider','globalDistanceReadout');
   save(); renderCameraSummary(); updateLive();
 }
-function setLinkedFocal(value){
-  const v=Math.max(9,Math.min(200,Math.round(Number(value)||35)));
+function setLinkedFocal(value,free=false){
+  let v=Math.max(9,Math.min(200,Number(value)||35));
+  v=free ? Math.round(v*100)/100 : Math.round(v);
   state.focal=v;
   const cameraFocal=document.getElementById('focalSlider'),cameraReadout=document.getElementById('focalReadout');
   if(cameraFocal) cameraFocal.value=String(v);
-  if(cameraReadout) cameraReadout.textContent=`${v} mm`;
+  if(cameraReadout) cameraReadout.textContent=focalReadoutText(v);
   const dofFocal=document.getElementById('dofFocalSlider'),dofReadout=document.getElementById('dofFocalReadout');
   if(dofFocal) dofFocal.value=String(v);
-  if(dofReadout) dofReadout.textContent=`${v} mm`;
+  if(dofReadout) dofReadout.textContent=focalReadoutText(v);
   const frameFocal=document.getElementById('frameFocalSlider'),frameReadout=document.getElementById('frameFocalReadout');
   if(frameFocal) frameFocal.value=String(v);
-  if(frameReadout) frameReadout.textContent=`${v} mm`;
+  if(frameReadout) frameReadout.textContent=focalReadoutText(v);
   save(); renderCameraSummary(); updateLive();
 }
-function setLinkedAperture(value){
-  const numeric=Number(value)||2.8;
-  const nearest=apertures.reduce((a,b)=>Math.abs(Number(b)-numeric)<Math.abs(Number(a)-numeric)?b:a,apertures[0]);
-  state.aperture=Number(nearest);
-  const idx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(nearest)));
+function setLinkedAperture(value,free=false){
+  let numeric=Math.max(1,Math.min(22,Number(value)||2.8));
+  if(!free) numeric=Number(apertures[nearestApertureIndex(numeric)]);
+  else numeric=Math.round(numeric*100)/100;
+  state.aperture=numeric;
+  const idx=nearestApertureIndex(numeric);
   const cameraAperture=document.getElementById('globalApertureSlider'),cameraReadout=document.getElementById('globalApertureReadout');
   if(cameraAperture) cameraAperture.value=String(idx);
-  if(cameraReadout) cameraReadout.textContent=`f/${nearest}`;
+  if(cameraReadout) cameraReadout.textContent=apertureReadoutText(numeric);
   save(); renderCameraSummary(); updateLive();
 }
 function syncDistanceRange(sliderId,readoutId){
   const slider=document.getElementById(sliderId),readout=document.getElementById(readoutId);
-  const distanceM=Math.round(Math.max(.30,(Number(state.distanceCm)||30)/100)*10)/10;
-  if(slider){slider.min='0.30';slider.step='0.10';slider.max=String(Math.max(15,Math.ceil(distanceM+1)));slider.value=distanceM.toFixed(2);}
-  if(readout) readout.textContent=`${distanceM.toFixed(2).replace('.',',')} m`;
+  const distanceM=Math.max(.30,(Number(state.distanceCm)||30)/100);
+  if(slider){slider.min='0.30';slider.step='0.10';slider.max=String(Math.max(15,Math.ceil(distanceM+1)));slider.value=String(distanceM);}
+  if(readout) readout.textContent=distanceReadoutText(distanceM);
 }
 function bindGlobal(){
   document.getElementById('cameraToggle').addEventListener('click',()=>{state.cameraOpen=!state.cameraOpen; save(); renderGlobalCameraControls();});
@@ -718,19 +790,20 @@ function bindGlobal(){
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
   document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);save();renderCustomize();renderModules();});
+  bindFreeValueEditing();
 }
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
 function renderModule(id){ const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub; return `<article class="module ${state.open[id]?'open':''}" data-module="${id}"><button class="module-head" data-toggle="${id}"><span class="module-title"><i class="module-dot"></i><span><strong>${title}</strong><small>${esc(sub)}</small></span></span><span class="chev">⌄</span></button><div class="module-body">${renderBody(id)}</div></article>`; }
 
 function renderBody(id){
   if(id==='plan') return renderPlanBody();
-  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))}"><strong id="dofFocalReadout">${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)))}"><strong id="dofApertureReadout">f/${state.aperture}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="dofDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div>${appLink(id)}`;
+  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="dofFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${nearestApertureIndex(state.aperture)}"><strong id="dofApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${apertureReadoutText(state.aperture)}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="dofDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div></div>${appLink(id)}`;
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider bos-frame-focal-slider"><span>FOCALE</span><input id="frameFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))}"><strong id="frameFocalReadout">${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm</strong></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-distance-slider bos-frame-height-slider"><span>HAUTEUR CAMÉRA</span><input id="frameCameraHeightSlider" type="range" min="0.50" max="2.50" step="0.05" value="${Number(state.frameCameraHeightM||1.55).toFixed(2)}"><strong id="frameCameraHeightReadout">${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider bos-frame-focal-slider"><span>FOCALE</span><input id="frameFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="frameFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="frameDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div><div class="bos-frame-distance-slider bos-frame-height-slider"><span>HAUTEUR CAMÉRA</span><input id="frameCameraHeightSlider" type="range" min="0.50" max="2.50" step="0.05" value="${Number(state.frameCameraHeightM||1.55).toFixed(2)}"><strong id="frameCameraHeightReadout" class="free-value-readout" data-free-control="cameraHeight" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${heightReadoutText(state.frameCameraHeightM)}</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
-  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="lightDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="lightDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
+  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="lightDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="lightDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
   if(id==='expo') return renderExpoWaveformBody();
   return '';
@@ -826,13 +899,13 @@ function bosExpoTerrainNote(key){
   return `${labels[key]} Repère indicatif : le placement dépend du rendu recherché et des conditions de tournage.`;
 }
 function renderExpoWaveformBody(){
-  const g=bosExpoWaveGuide(),v=Math.round(Math.max(0,Math.min(100,Number(state.expo.read)||0))),info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
+  const g=bosExpoWaveGuide(),v=Math.max(0,Math.min(100,Number(state.expo.read)||0)),info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
   const segments=g.zones.map((z,i)=>`<span class="bos-wave-seg bos-wave-seg-${(i%5)+1}" style="left:${Math.max(0,z.min)}%;width:${Math.max(.15,Math.min(100,z.max)-Math.max(0,z.min))}%"></span>`).join('');
   const bands=g.stops.slice(0,-1).map((a,i)=>{const b=g.stops[i+1],left=Math.max(0,a.percent),right=Math.min(100,b.percent);return `<span class="bos-wave-stop-band ${i%2?'alt':''}" style="left:${left}%;width:${Math.max(.1,right-left)}%"></span>`}).join('');
   const ticks=g.stops.map((x,i)=>{const pos=Math.max(0,Math.min(100,x.percent)),label=x.stop===0?'0':`${x.stop>0?'+':''}${x.stop}`,edge=i===0?' edge-left':i===g.stops.length-1?' edge-right':'';return `<span class="bos-wave-stop-tick${edge}" style="left:${pos}%"><i></i><b>${label}</b></span>`}).join('');
   const markers=g.markers.map(m=>`<span class="bos-wave-marker" style="left:${Math.max(0,Math.min(100,m.value))}%"><i></i><b>${m.label}</b></span>`).join('');
   return `<div class="bos-expo-wave">
-    <div class="bos-expo-wave-head"><div class="bos-expo-wave-kicker">EXPLORER LA DYNAMIQUE DE L’IMAGE</div><div class="bos-expo-wave-value"><strong id="expoWaveValue">${v}</strong><span>%</span></div></div>
+    <div class="bos-expo-wave-head"><div class="bos-expo-wave-kicker">EXPLORER LA DYNAMIQUE DE L’IMAGE</div><div class="bos-expo-wave-value"><strong id="expoWaveValue" class="free-value-readout expo-free-readout" data-free-control="waveform" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${trimFrNumber(v,2)}</strong><span>%</span></div></div>
     <div class="bos-wave-shell">
       <div class="bos-wave-scale">
         <div class="bos-wave-segments">${segments}</div>
@@ -866,11 +939,11 @@ function renderExpoWaveformBody(){
     </div>
   </div>`;
 }
-function updateExpoWaveformUi(value){
-  const v=Math.round(Math.max(0,Math.min(100,Number(value)||0))); state.expo.read=v;
+function updateExpoWaveformUi(value,free=false){
+  let v=Math.max(0,Math.min(100,Number(value)||0)); v=free?Math.round(v*100)/100:Math.round(v); state.expo.read=v;
   const info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
   const valueEl=document.getElementById('expoWaveValue'),cursor=document.getElementById('expoWaveCursor'),quality=document.getElementById('expoWaveQuality'),qualityText=document.getElementById('expoWaveQualityText'),visual=document.getElementById('expoWaveQualityVisual'),qualityCursor=document.getElementById('expoWaveQualityCursor'),left=document.getElementById('expoWaveQualityLeft'),right=document.getElementById('expoWaveQualityRight'),note=document.getElementById('expoTerrainNote');
-  if(valueEl)valueEl.textContent=String(v); if(cursor)cursor.style.left=`${v}%`; if(quality)quality.textContent=info.quality; if(qualityText)qualityText.textContent=info.text;
+  if(valueEl)valueEl.textContent=trimFrNumber(v,2); if(cursor)cursor.style.left=`${v}%`; if(quality)quality.textContent=info.quality; if(qualityText)qualityText.textContent=info.text;
   if(visual){visual.classList.toggle('compression',info.compression);visual.classList.toggle('cleaner',!info.compression)}
   if(qualityCursor)qualityCursor.style.left=`${5+info.progress*90}%`; if(left)left.textContent=info.compression?'Plus de marge':'Bas de zone · plus fragile'; if(right)right.textContent=info.compression?'Plus comprimé':'Haut de zone · plus robuste';
   document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(el=>el.classList.toggle('active',el.dataset.terrain===terrain)); if(note)note.textContent=bosExpoTerrainNote(terrain);
@@ -946,7 +1019,7 @@ function bindModules(){
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
   const frameFocal=document.getElementById('frameFocalSlider'); if(frameFocal) frameFocal.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
-  const frameCameraHeight=document.getElementById('frameCameraHeightSlider'); if(frameCameraHeight) frameCameraHeight.addEventListener('input',e=>{state.frameCameraHeightM=Math.max(.50,Math.min(2.50,Number(e.target.value)||1.55)); save(); updateFrame();});
+  const frameCameraHeight=document.getElementById('frameCameraHeightSlider'); if(frameCameraHeight) frameCameraHeight.addEventListener('input',e=>setFrameCameraHeight(e.target.value,false));
   const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const dofFocal=document.getElementById('dofFocalSlider'); if(dofFocal) dofFocal.addEventListener('input',e=>setLinkedFocal(e.target.value));
   const dofDistance=document.getElementById('dofDistanceSlider'); if(dofDistance) dofDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
@@ -1147,13 +1220,13 @@ function updateDOF(){
   const sub=document.getElementById('dofSub');
   if(sub) sub.textContent=`Net de ${fmtDofMm(r.near)} à ${fmtDofMm(r.far)} · MAP ${fmtDofMm(r.s)} · ${r.f} mm · f/${r.N} · ${r.cam?.dof?.label||'capteur'}`;
   const focalSlider=document.getElementById('dofFocalSlider'),focalReadout=document.getElementById('dofFocalReadout');
-  if(focalSlider) focalSlider.value=String(Math.max(9,Math.min(200,Math.round(Number(state.focal)||35))));
-  if(focalReadout) focalReadout.textContent=`${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm`;
+  if(focalSlider) focalSlider.value=String(Math.max(9,Math.min(200,Number(state.focal)||35)));
+  if(focalReadout) focalReadout.textContent=focalReadoutText(state.focal);
   syncDistanceRange('dofDistanceSlider','dofDistanceReadout');
   const apertureSlider=document.getElementById('dofApertureSlider'),apertureReadout=document.getElementById('dofApertureReadout');
-  const idx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)));
+  const idx=nearestApertureIndex(state.aperture);
   if(apertureSlider) apertureSlider.value=String(idx);
-  if(apertureReadout) apertureReadout.textContent=`f/${state.aperture}`;
+  if(apertureReadout) apertureReadout.textContent=apertureReadoutText(state.aperture);
 }
 function frameVerticalFovDeg(){
   const h=frameHfovDeg()*Math.PI/180;
@@ -1212,11 +1285,11 @@ function updateFrame(){
   const plan=closestPreviewPlan(projection?.bodyScale||0);
   planEl.innerHTML=`<strong>${plan}</strong>`;
   const frameFocalSlider=document.getElementById('frameFocalSlider'),frameFocalReadout=document.getElementById('frameFocalReadout');
-  if(frameFocalSlider) frameFocalSlider.value=String(Math.max(9,Math.min(200,Math.round(Number(state.focal)||35))));
-  if(frameFocalReadout) frameFocalReadout.textContent=`${Math.max(9,Math.min(200,Math.round(Number(state.focal)||35)))} mm`;
+  if(frameFocalSlider) frameFocalSlider.value=String(Math.max(9,Math.min(200,Number(state.focal)||35)));
+  if(frameFocalReadout) frameFocalReadout.textContent=focalReadoutText(state.focal);
   syncDistanceRange('frameDistanceSlider','frameDistanceReadout');
   if(cameraHeightSlider) cameraHeightSlider.value=Number(state.frameCameraHeightM||1.55).toFixed(2);
-  if(cameraHeightReadout) cameraHeightReadout.textContent=`${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m`;
+  if(cameraHeightReadout) cameraHeightReadout.textContent=heightReadoutText(state.frameCameraHeightM);
   const ratioText=document.getElementById('ratioText'); if(ratioText) ratioText.textContent=ratioLabel(state.ratio);
   if(foot) foot.textContent=`Sujet unique · 1,80 m · caméra ${Number(state.frameCameraHeightM||1.55).toFixed(2).replace('.',',')} m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
