@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'bos-cockpit-v27';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v28';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -586,7 +586,7 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-info" id="frameInfo"></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.05" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
   if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
@@ -802,6 +802,7 @@ function bindModules(){
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
+  const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>{const v=Math.max(.30,Math.min(50,Number(e.target.value)||.30)); state.distanceCm=v*100; save(); const cameraDistance=document.getElementById('globalDistanceM'); if(cameraDistance) cameraDistance.value=v.toFixed(2); renderCameraSummary(); updateLive();});
   const wave=document.getElementById('expoWaveSlider'); if(wave)wave.addEventListener('input',e=>updateExpoWaveformUi(e.target.value));
   const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
   document.querySelectorAll('[data-expolock]').forEach(b=>b.addEventListener('click',()=>toggleExpoLock(b.dataset.expolock)));
@@ -1030,8 +1031,8 @@ function frameProjectSingleSubject(){
 }
 function updateMedia(){ const el=document.getElementById('mediaMain'),sub=document.getElementById('mediaSub'); if(!el)return; const bitrateMb=bitrateToMbPerSec(),sec=(Number(state.media.card)*1000*8)/bitrateMb; el.textContent=fmtDuration(sec); if(sub)sub.textContent=`temps d’enregistrement · ${bitrateMb.toLocaleString('fr-FR')} Mb/s · réserve 0 %`; }
 function updateFrame(){
-  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),info=document.getElementById('frameInfo'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot'),measure=document.getElementById('frameMeasure');
-  if(!stage||!win||!subject||!info||!planEl) return;
+  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot'),measure=document.getElementById('frameMeasure'),distanceSlider=document.getElementById('frameDistanceSlider'),distanceReadout=document.getElementById('frameDistanceReadout');
+  if(!stage||!win||!subject||!planEl) return;
   const cam=currentCamera(),metrics=frameMetricsAtDistance(state.distanceCm/100),ratio=Math.max(.2,Number(state.ratio)||16/9),stageAspect=16/9;
   let w=92,h=w*stageAspect/ratio; if(h>82){h=82;w=h*ratio/stageAspect;}
   win.style.width=`${w}%`; win.style.height=`${h}%`;
@@ -1048,9 +1049,10 @@ function updateFrame(){
     }
   }
   const plan=closestPreviewPlan(projection?.bodyScale||0);
-  const short=(cam?.name||'Caméra').replace(/^Sony\s+/,'').replace(/^ARRI\s+/,'').replace(/^RED\s+/,'');
-  info.innerHTML=`<span>CAMÉRA<b>${esc(short)}</b></span><span>FOCALE<b>${state.focal} mm</b></span><span>FORMAT<b>${esc(ratioLabel(state.ratio))}</b></span><span>HFOV<b>${metrics.hfov.toFixed(1)}°</b></span>`;
-  planEl.innerHTML=`<strong>${plan}</strong><span>${esc(short)} · ${state.focal} mm · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m</span>`;
+  planEl.innerHTML=`<strong>${plan}</strong>`;
+  const distanceM=Math.max(.30,(Number(state.distanceCm)||30)/100);
+  if(distanceSlider){ distanceSlider.max=String(Math.max(15,Math.ceil(distanceM+1))); distanceSlider.value=distanceM.toFixed(2); }
+  if(distanceReadout) distanceReadout.textContent=`${distanceM.toFixed(2).replace('.',',')} m`;
   if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
 function idealIsoFromLux(lux,aperture,shutterFraction='1/50'){

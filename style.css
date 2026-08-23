@@ -327,3 +327,13 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .bos-frame-measure:before{top:0}.bos-frame-measure:after{bottom:0}
 .bos-frame-measure strong{position:absolute;left:10px;top:70%;transform:translateY(-50%);background:rgba(255,255,255,.9);color:#285867;border-radius:9px;padding:5px 7px;font-size:9px;white-space:nowrap}
 :root[data-theme="dark"] .bos-frame-measure strong{background:rgba(20,23,26,.9);color:#9dc8d0}
+
+
+/* V28 — FRAME : preview épurée + recul lié à la distance sujet */
+.bos-frame-distance-slider{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:12px;padding:0 2px}
+.bos-frame-distance-slider>span{margin:0;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.12em}
+.bos-frame-distance-slider input{width:100%;accent-color:var(--blue)}
+.bos-frame-distance-slider strong{min-width:60px;color:var(--text);font-size:11px;text-align:right}
+.bos-frame-plan{max-width:50%}
+.bos-frame-plan span{display:none}
+@media(max-width:560px){.bos-frame-distance-slider{gap:8px}.bos-frame-distance-slider strong{min-width:54px}}

@@ -93,3 +93,5 @@ V25 : dans la bulle Caméra, suppression de toute la zone des réglages caméra 
 V26 : Diaph, distance sujet et ratio remis dans Réglages caméra. DOF exact à la distance choisie. FRAME Preview : sujet unique 1,80 m, cadrage calculé selon caméra/capteur/focale/distance/ratio. LIGHT : 1 m, 3 m et distance sujet avec lux estimés et ISO conseillé pour le diaph choisi à 1/50.
 
 V27 : DOF exact et live, FRAME live avec projection issue de FRAME et mannequin du Preview, LIGHT live corrigé (ISO calculé à 1/50).
+
+V28 : FRAME simplifié — suppression des informations caméra/focale/format/HFOV de la preview et du sous-texte technique du cartouche de plan. Ajout d'une barre RECUL horizontale reliée bidirectionnellement à Distance sujet dans Réglages caméra : modifier l'un met immédiatement à jour l'autre, ainsi que FRAME, DOF et LIGHT.
