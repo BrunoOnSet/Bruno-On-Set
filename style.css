@@ -460,3 +460,7 @@ input[type="range"],
   .bos-header-logo{width:46px;height:46px;flex-basis:46px}
   .bos-header-name{font-size:15px}
 }
+
+
+/* V43 header logo exact image */
+.bos-header-logo{object-fit:contain;background:transparent;border-radius:0}

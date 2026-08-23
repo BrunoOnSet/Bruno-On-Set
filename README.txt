@@ -133,3 +133,8 @@ V42 — IDENTITÉ BRUNO ONSET
 - « Bruno OnSet » est affiché à côté en Montserrat Bold, couleur BOS #2F5B66.
 - L'icône PWA Android/iOS est dérivée directement de l'image fournie, sans recadrage de contenu.
 - Cache / version / service worker incrémentés en V42.
+
+V43 — ENTÊTE
+- Remplacement du logo d'entête par l'image exacte fournie par l'utilisateur (BOS blanc sur fond bleu), sans réinterprétation.
+- Logo affiché en entier dans l'entête (object-fit: contain).
+- Version / cache / service worker incrémentés en V43.
