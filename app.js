@@ -1,5 +1,6 @@
-const STORAGE_KEY = 'bos-cockpit-v29';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V30';
+const STORAGE_KEY = 'bos-cockpit-v30';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -387,6 +388,78 @@ async function loadSharedLightDatabase(){
   }
 }
 
+
+let bosUpdateReloading = false;
+let bosUpdateCheckTimer = null;
+
+function bosVersionedUrl(version){
+  const url = new URL(window.location.href);
+  url.searchParams.set('_bosv', String(version || APP_VERSION).replace(/^V/i,''));
+  return url.toString();
+}
+
+async function forceBosReload(version){
+  if(bosUpdateReloading) return;
+  bosUpdateReloading = true;
+  try{
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(k=>/^bos-bruno-onset-/i.test(k)).map(k=>caches.delete(k)));
+    }
+  }catch{}
+  window.location.replace(bosVersionedUrl(version));
+}
+
+async function checkForBosUpdate(){
+  try{
+    const r = await fetch(`version.json?_=${Date.now()}`, {cache:'no-store'});
+    if(!r.ok) return;
+    const latest = await r.json();
+    if(!latest?.version || latest.version === APP_VERSION) return;
+    const reg = await navigator.serviceWorker?.getRegistration?.();
+    try{ await reg?.update?.(); }catch{}
+    if(reg?.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+    // File version mismatch is authoritative: reload even if the SW event is delayed by Android.
+    setTimeout(()=>forceBosReload(latest.version), 450);
+  }catch{}
+}
+
+async function setupAppUpdateSystem(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    const reg = await navigator.serviceWorker.register('sw.js?v=30', {updateViaCache:'none'});
+
+    // Ask the browser to check immediately rather than waiting for its normal cadence.
+    try{ await reg.update(); }catch{}
+
+    if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+
+    reg.addEventListener('updatefound', ()=>{
+      const worker = reg.installing;
+      if(!worker) return;
+      worker.addEventListener('statechange', ()=>{
+        if(worker.state === 'installed' && navigator.serviceWorker.controller){
+          worker.postMessage({type:'SKIP_WAITING'});
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(bosUpdateReloading) return;
+      bosUpdateReloading = true;
+      window.location.replace(bosVersionedUrl(APP_VERSION));
+    });
+
+    // Also compare a tiny uncached version file. This catches an update while the PWA stays open.
+    await checkForBosUpdate();
+    window.addEventListener('focus', checkForBosUpdate, {passive:true});
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForBosUpdate(); });
+    bosUpdateCheckTimer = window.setInterval(checkForBosUpdate, 60 * 1000);
+  }catch(err){
+    console.warn('Mise à jour BOS indisponible.', err);
+  }
+}
+
 async function init(){
   const [cameraResult,lightResult] = await Promise.allSettled([loadSharedCameraDatabase(),loadSharedLightDatabase()]);
   if(cameraResult.status==='fulfilled' && cameraResult.value) cameras = cameraResult.value.cameras || [];
@@ -404,7 +477,7 @@ async function init(){
   clampIsoToRange();
   clampCameraIsoToRange();
   setupTheme(); renderCameraSelect(); renderTopFocal(); renderGlobalCameraControls(); renderModules(); bindGlobal(); renderCustomize();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  setupAppUpdateSystem();
 }
 function setupTheme(){ document.documentElement.dataset.theme=state.theme; document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#0B0C0E':'#F3F1EC'; const btn=document.getElementById('themeBtn'); if(btn) btn.textContent=state.theme==='dark'?'LIGHT':'DARK'; }
 function cameraBrand(c){ return String(c?.brand || c?.group || 'Autre').trim() || 'Autre'; }

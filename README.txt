@@ -97,3 +97,11 @@ V27 : DOF exact et live, FRAME live avec projection issue de FRAME et mannequin 
 V28 : FRAME simplifié — suppression des informations caméra/focale/format/HFOV de la preview et du sous-texte technique du cartouche de plan. Ajout d'une barre RECUL horizontale reliée bidirectionnellement à Distance sujet dans Réglages caméra : modifier l'un met immédiatement à jour l'autre, ainsi que FRAME, DOF et LIGHT.
 
 V29 : ajout d'une barre RECUL dans DOF et LIGHT, synchronisée avec FRAME et Réglages caméra. Ajout dans DOF d'une barre DIAPH de f/1,0 à f/22 sur les valeurs normalisées de l'app ; tous les contrôles restent bidirectionnellement liés.
+
+V30 — MISE À JOUR ANDROID / PWA RENFORCÉE
+- Service worker passé en network-first pour les navigations, JS et CSS.
+- Cache de version dédié `bos-bruno-onset-v30` et suppression automatique des anciens caches BOS.
+- `skipWaiting()` + `clients.claim()` + rechargement des fenêtres/PWA déjà ouvertes lors de l’activation d’une nouvelle version.
+- Ajout de `version.json`, interrogé sans cache au démarrage, au retour au premier plan et toutes les 60 s.
+- Si une nouvelle version est détectée, BOS force une actualisation avec paramètre anti-cache.
+- `style.css`, `app.js` et le manifest sont versionnés dans `index.html`.
