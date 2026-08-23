@@ -1,6 +1,7 @@
-const APP_VERSION = 'V35';
-const STORAGE_KEY = 'bos-cockpit-v36';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V37';
+const APP_BUILD = 37;
+const STORAGE_KEY = 'bos-cockpit-v37';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -393,6 +394,8 @@ async function loadSharedLightDatabase(){
 
 let bosUpdateReloading = false;
 let bosUpdateCheckTimer = null;
+let bosLastUpdateCheck = 0;
+let bosPendingUpdateVersion = null;
 
 function bosVersionedUrl(version){
   const url = new URL(window.location.href);
@@ -400,63 +403,82 @@ function bosVersionedUrl(version){
   return url.toString();
 }
 
+function bosBuildNumber(value){
+  if(Number.isFinite(Number(value))) return Number(value);
+  const m=String(value||'').match(/(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+
 async function forceBosReload(version){
   if(bosUpdateReloading) return;
   bosUpdateReloading = true;
   try{
-    if('caches' in window){
-      const keys = await caches.keys();
-      await Promise.all(keys.filter(k=>/^bos-bruno-onset-/i.test(k)).map(k=>caches.delete(k)));
-    }
+    sessionStorage.setItem('bos-update-target', String(version||''));
   }catch{}
   window.location.replace(bosVersionedUrl(version));
 }
 
-async function checkForBosUpdate(){
+async function checkForBosUpdate(force=false){
+  const now=Date.now();
+  if(!force && now-bosLastUpdateCheck < 15000) return;
+  bosLastUpdateCheck=now;
   try{
-    const r = await fetch(`version.json?_=${Date.now()}`, {cache:'no-store'});
+    const r = await fetch(`version.json?_=${now}`, {cache:'no-store'});
     if(!r.ok) return;
     const latest = await r.json();
-    if(!latest?.version || latest.version === APP_VERSION) return;
+    const latestBuild = bosBuildNumber(latest?.build || latest?.version);
+    if(!latestBuild || latestBuild <= APP_BUILD){
+      try{ sessionStorage.removeItem('bos-update-target'); }catch{}
+      return;
+    }
+
+    // Anti-boucle : si cette même cible vient déjà de provoquer un reload dans cet onglet,
+    // on ne recharge pas encore et encore si le déploiement réseau n'est pas totalement propagé.
+    try{
+      if(sessionStorage.getItem('bos-update-target') === String(latest.version||latestBuild)) return;
+    }catch{}
+
+    bosPendingUpdateVersion = latest.version || `V${latestBuild}`;
     const reg = await navigator.serviceWorker?.getRegistration?.();
     try{ await reg?.update?.(); }catch{}
     if(reg?.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
-    // File version mismatch is authoritative: reload even if the SW event is delayed by Android.
-    setTimeout(()=>forceBosReload(latest.version), 450);
+
+    // Le controllerchange déclenche normalement le reload. Ce fallback ne s'exécute
+    // qu'une seule fois si Android tarde à basculer le nouveau service worker.
+    window.setTimeout(()=>{
+      if(!bosUpdateReloading && bosPendingUpdateVersion) forceBosReload(bosPendingUpdateVersion);
+    }, 2500);
   }catch{}
 }
 
 async function setupAppUpdateSystem(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('sw.js?v=30', {updateViaCache:'none'});
+    const reg = await navigator.serviceWorker.register('sw.js?v=37', {updateViaCache:'none'});
 
-    // Ask the browser to check immediately rather than waiting for its normal cadence.
     try{ await reg.update(); }catch{}
-
     if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
 
     reg.addEventListener('updatefound', ()=>{
       const worker = reg.installing;
       if(!worker) return;
       worker.addEventListener('statechange', ()=>{
-        if(worker.state === 'installed' && navigator.serviceWorker.controller){
+        if(worker.state === 'installed' && navigator.serviceWorker.controller && bosPendingUpdateVersion){
           worker.postMessage({type:'SKIP_WAITING'});
         }
       });
     });
 
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
-      if(bosUpdateReloading) return;
-      bosUpdateReloading = true;
-      window.location.replace(bosVersionedUrl(APP_VERSION));
+      if(!bosPendingUpdateVersion || bosUpdateReloading) return;
+      forceBosReload(bosPendingUpdateVersion);
     });
 
-    // Also compare a tiny uncached version file. This catches an update while the PWA stays open.
-    await checkForBosUpdate();
-    window.addEventListener('focus', checkForBosUpdate, {passive:true});
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForBosUpdate(); });
-    bosUpdateCheckTimer = window.setInterval(checkForBosUpdate, 60 * 1000);
+    // Vérification au démarrage, au retour dans l'app, puis seulement toutes les 5 minutes.
+    await checkForBosUpdate(true);
+    window.addEventListener('focus', ()=>checkForBosUpdate(false), {passive:true});
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForBosUpdate(false); });
+    bosUpdateCheckTimer = window.setInterval(()=>checkForBosUpdate(false), 5 * 60 * 1000);
   }catch(err){
     console.warn('Mise à jour BOS indisponible.', err);
   }

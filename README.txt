@@ -117,3 +117,5 @@ V34 : Ratio retiré des Réglages caméra et déplacé dans FRAME sous RECUL. DO
 V35 : ajout d'un réglage HAUTEUR CAMÉRA dans FRAME (0,50–2,50 m) qui déplace verticalement le sujet dans le cadre. Correction du calcul des ratios portrait : 9:16 est désormais traité comme une rotation physique de la caméra, avec échange logique des dimensions de champ par rapport au 16:9.
 
 V36 : ajout d’une barre FOCALE dans FRAME, au-dessus de RECUL. Elle est synchronisée en temps réel avec la focale globale et la barre FOCALE de DOF (9 à 200 mm, pas de 1 mm).
+
+V37 : correction du système de mise à jour. La V36 avait APP_VERSION resté sur V35 alors que version.json et le service worker étaient en V36, ce qui pouvait provoquer des rechargements répétés. V37 aligne tous les numéros, compare désormais les builds numériquement, ajoute un garde anti-boucle, supprime la navigation forcée depuis l'activation du service worker et espace la vérification périodique à 5 minutes.
