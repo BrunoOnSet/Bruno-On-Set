@@ -89,3 +89,5 @@ V23 :
 V24 : module EXPO simplifié autour de l’explorateur de dynamique S-Log3 inspiré de BOS EXPO V3.62. Le module affiche uniquement le schéma waveform 0–100 %, le curseur, la qualité de signal attendue et les repères terrain. EXPO reste en dernier par défaut et porte toujours le sous-titre BIENTÔT DISPONIBLE.
 
 V25 : dans la bulle Caméra, suppression de toute la zone des réglages caméra (diaph / ISO / shutter / distance et limites). Remplacée par un choix simple de courbe gamma avec panneau d'information ISO natifs / Lo-Hi.
+
+V26 : Diaph, distance sujet et ratio remis dans Réglages caméra. DOF exact à la distance choisie. FRAME Preview : sujet unique 1,80 m, cadrage calculé selon caméra/capteur/focale/distance/ratio. LIGHT : 1 m, 3 m et distance sujet avec lux estimés et ISO conseillé pour le diaph choisi à 1/50.

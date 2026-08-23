@@ -1,11 +1,23 @@
-const STORAGE_KEY = 'bos-cockpit-v25';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const STORAGE_KEY = 'bos-cockpit-v26';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const LIGHT_DB_FALLBACK_URL = 'data/lights.json';
 const LAST_CAMERA_BY_BRAND_KEY = 'bos-onset-last-camera-by-brand';
 const FOCAL_PRESETS = [18,24,28,35,50,85,105,135];
+const RATIOS = [
+  {label:'2.39:1',value:2.39},{label:'2.00:1',value:2.0},
+  {label:'1.85:1',value:1.85},{label:'16:9',value:16/9},
+  {label:'4:3',value:4/3},{label:'1:1',value:1},
+  {label:'4:5',value:4/5},{label:'9:16',value:9/16}
+];
+const FRAME_SUBJECT_HEIGHT_M = 1.80;
+const FRAME_FIGURE = {viewWidth:310,viewHeight:1300,headTopY:2.08,eyeY:79.56,chestY:297.96,waistY:461.24,kneeY:875.68,footY:1289.6};
+FRAME_FIGURE.headTopRatio=FRAME_FIGURE.headTopY/FRAME_FIGURE.viewHeight;
+FRAME_FIGURE.eyeRatio=FRAME_FIGURE.eyeY/FRAME_FIGURE.viewHeight;
+FRAME_FIGURE.footRatio=FRAME_FIGURE.footY/FRAME_FIGURE.viewHeight;
+FRAME_FIGURE.bodyRatio=FRAME_FIGURE.footRatio-FRAME_FIGURE.headTopRatio;
 const PLAN_LIBRARY_KEY = 'bos-plan-feu-library-v06';
 const PLAN_CURRENT_KEY = 'bos-plan-feu-v06-current';
 const ONSET_PLAN_IMPORT_KEY = 'bos-onset-plan-imports-v01';
@@ -21,6 +33,7 @@ const defaultState = {
   focal: 35,
   cameraGamma: 'slog3',
   aperture: 2.8,
+  ratio: 16/9,
   cameraShutter: '1/50',
   cameraIso: '800',
   distanceCm: 250,
@@ -83,6 +96,7 @@ function normalizeState(){
   state.focal = Math.max(1, Number(state.focal) || 35);
   if(!state.cameraGamma) state.cameraGamma = 'slog3';
   state.aperture = Number(state.aperture) || 2.8;
+  state.ratio = Number(state.ratio) || 16/9;
   if(!state.cameraShutter) state.cameraShutter = '1/50';
   if(!state.cameraIso) state.cameraIso = '800';
   if(typeof state.cameraOpen !== 'boolean') state.cameraOpen = true;
@@ -475,10 +489,59 @@ function renderGammaButtons(){
   host.innerHTML=entries.map(([key,p])=>`<button type="button" class="gamma-chip ${state.cameraGamma===key?'active':''}" data-gamma="${esc(key)}">${esc(p.label || key)}</button>`).join('');
   const info=document.getElementById('gammaInfo'); if(info) info.textContent=gammaInfoText(currentCamera());
 }
+function ratioLabel(v){
+  const n=Number(v);
+  return RATIOS.find(r=>Math.abs(r.value-n)<0.001)?.label || `${n.toFixed(2)}:1`;
+}
+function renderRatioDialog(){
+  const root=document.getElementById('ratioList'); if(!root) return;
+  root.innerHTML=RATIOS.map(r=>`<button type="button" class="ratio-choice ${Math.abs(state.ratio-r.value)<0.001?'active':''}" data-ratio="${r.value}">${r.label}</button>`).join('');
+  root.querySelectorAll('[data-ratio]').forEach(btn=>btn.addEventListener('click',()=>{
+    state.ratio=Number(btn.dataset.ratio); save(); renderGlobalCameraControls(); updateFrame(); renderRatioDialog();
+    document.getElementById('ratioDialog')?.close();
+  }));
+}
+function frameHfovDeg(){
+  const cam=currentCamera(),sensor=Number(cam?.sensorWidthMm)||36,f=Math.max(1,Number(state.focal)||35);
+  return 2*Math.atan(sensor/(2*f))*180/Math.PI;
+}
+function frameMetricsAtDistance(distanceM=state.distanceCm/100){
+  const d=Math.max(.01,Number(distanceM)||.01),hfov=frameHfovDeg();
+  const frameWidth=2*d*Math.tan((hfov*Math.PI/180)/2);
+  const frameHeight=frameWidth/Math.max(.2,Number(state.ratio)||16/9);
+  return {hfov,frameWidth,frameHeight};
+}
+function previewTargetScales(){
+  const refs=[
+    {id:'extreme',label:'TRÈS GROS PLAN',cropY:145},
+    {id:'close',label:'GROS PLAN',cropY:220},
+    {id:'chest',label:'POITRINE',cropY:FRAME_FIGURE.chestY},
+    {id:'waist',label:'TAILLE',cropY:FRAME_FIGURE.waistY},
+    {id:'american',label:'AMÉRICAIN',cropY:(FRAME_FIGURE.waistY+FRAME_FIGURE.kneeY)/2},
+    {id:'full',label:'PIED',cropY:FRAME_FIGURE.footY}
+  ];
+  const figureBody=FRAME_FIGURE.footY-FRAME_FIGURE.headTopY;
+  return refs.map(r=>({...r,scale:(2/3)*figureBody/Math.max(1,r.cropY-FRAME_FIGURE.eyeY)}));
+}
+function closestPreviewPlan(scale){
+  const refs=previewTargetScales().sort((a,b)=>b.scale-a.scale);
+  if(scale>=refs[0].scale) return `PLAN ${refs[0].label}`;
+  for(let i=0;i<refs.length-1;i++){
+    const boundary=(refs[i].scale+refs[i+1].scale)/2;
+    if(scale>=boundary) return `PLAN ${refs[i].label}`;
+  }
+  return `PLAN ${refs[refs.length-1].label}`;
+}
+function frameFigureSvg(){
+  return `<svg viewBox="0 0 310 1300" aria-hidden="true" focusable="false">
+    <g class="figure-body"><ellipse cx="155" cy="128" rx="76" ry="118"/><path d="M105 228 C100 270 84 305 48 332 C23 352 14 397 11 458 L0 1296 H310 L299 458 C296 397 287 352 262 332 C226 305 210 270 205 228 Z"/></g>
+    <g class="figure-detail" fill="none"><path d="M122 115 Q134 103 145 114 M165 114 Q177 103 188 115"/><path d="M154 124 L154 167"/><path d="M140 191 Q155 199 171 191"/><path d="M72 331 H238"/><path d="M83 463 H227"/><path d="M155 270 V720"/><path d="M95 873 H215"/></g>
+  </svg>`;
+}
 function renderCameraSummary(){
   const el=document.getElementById('cameraSummary'); if(!el) return;
   const cam=currentCamera();
-  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · ${gammaShortLabel(cam)}`;
+  el.textContent=`${cam?.name||'—'} · ${state.focal} mm · f/${state.aperture} · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m · ${ratioLabel(state.ratio)}`;
 }
 function clampApertureToRange(compensate=true){
   const vals=apertureRangeValues();
@@ -495,9 +558,10 @@ function clampApertureToRange(compensate=true){
 function renderGlobalCameraControls(){
   const card=document.getElementById('cameraCard'); if(card) card.classList.toggle('open',!!state.cameraOpen);
   const f=document.getElementById('focalInput'); if(f) f.value=state.focal;
-  renderCameraSummary();
-  renderGammaButtons();
-  syncGlobalLimitState();
+  const a=document.getElementById('globalAperture'); if(a){a.innerHTML=apertures.map(v=>`<option value="${v}" ${String(Number(v))===String(Number(state.aperture))?'selected':''}>f/${v}</option>`).join('');a.value=String(state.aperture);}
+  const d=document.getElementById('globalDistanceM'); if(d) d.value=(state.distanceCm/100).toFixed(2);
+  const rt=document.getElementById('ratioText'); if(rt) rt.textContent=ratioLabel(state.ratio);
+  renderCameraSummary(); renderGammaButtons(); renderRatioDialog(); syncGlobalLimitState();
 }
 function syncGlobalLimitState(){
   /* Les alertes de limite appartiennent uniquement au module EXPO. */
@@ -508,6 +572,9 @@ function bindGlobal(){
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
   document.getElementById('focalInput').addEventListener('input',e=>{state.focal=Math.max(1,Number(e.target.value)||35); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
   document.getElementById('focalPresets').addEventListener('click',e=>{const btn=e.target.closest('[data-focalpreset]'); if(!btn)return; state.focal=Number(btn.dataset.focalpreset); document.getElementById('focalInput').value=state.focal; save(); renderTopFocal(); renderCameraSummary(); updateLive();});
+  const aperture=document.getElementById('globalAperture'); if(aperture) aperture.addEventListener('change',e=>{state.aperture=Number(e.target.value)||2.8; save(); renderCameraSummary(); updateLive();});
+  const distance=document.getElementById('globalDistanceM'); if(distance) distance.addEventListener('input',e=>{state.distanceCm=Math.max(30,(Number(e.target.value)||.3)*100); save(); renderCameraSummary(); updateLive();});
+  const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
@@ -522,9 +589,9 @@ function renderBody(id){
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
-  if(id==='frame') return `<div class="frame-preview"><div class="frame-safe"></div><div class="subject" id="frameSubject"></div><div class="frame-meta" id="frameMeta"></div></div><div class="warning">Aperçu relatif V15 · la récupération du calibrage réel de FRAME sera branchée ensuite.</div>${appLink(id)}`;
+  if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureSvg()}</div><div class="bos-frame-info" id="frameInfo"></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
-  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span></div><div class="luxgrid"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">ISO min —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">ISO min —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
+  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
   if(id==='expo') return renderExpoWaveformBody();
   return '';
@@ -901,18 +968,27 @@ function changeApertureBound(which,newVal){
 function updateLive(){ updateDOF();updateMedia();updateFrame();updateLight(); }
 function updateDOF(){
   const out=document.getElementById('dofMain'); if(!out)return;
-  const cam=currentCamera(),f=Number(state.focal),N=Number(state.aperture),c=cam?.dof?.cocMm||.029,s=Number(state.distanceCm)*10;
+  const cam=currentCamera(),f=Number(state.focal),N=Number(state.aperture),c=cam?.dof?.cocMm||.029,s=Math.max(300,Number(state.distanceCm)*10);
   const H=(f*f)/(N*c)+f,near=(H*s)/(H+(s-f)),far=(H<=s-f)?Infinity:(H*s)/(H-(s-f)),dof=far===Infinity?Infinity:(far-near)/1000;
   out.textContent=`PDC ${fmtM(dof)}`;
-  document.getElementById('dofSub').textContent=`${fmtM(near/1000)} — ${fmtM(far/1000)} · ${state.focal} mm · f/${state.aperture} · ${state.distanceCm} cm`;
+  const sub=document.getElementById('dofSub'); if(sub) sub.textContent=`Net de ${fmtM(near/1000)} à ${fmtM(far/1000)} · mise au point ${(state.distanceCm/100).toFixed(2).replace('.',',')} m · ${state.focal} mm · f/${state.aperture}`;
 }
 function updateMedia(){ const el=document.getElementById('mediaMain'),sub=document.getElementById('mediaSub'); if(!el)return; const bitrateMb=bitrateToMbPerSec(),sec=(Number(state.media.card)*1000*8)/bitrateMb; el.textContent=fmtDuration(sec); if(sub)sub.textContent=`temps d’enregistrement · ${bitrateMb.toLocaleString('fr-FR')} Mb/s · réserve 0 %`; }
-function updateFrame(){ const sub=document.getElementById('frameSubject'),meta=document.getElementById('frameMeta'); if(!sub||!meta)return; const cam=currentCamera(),crop=36/(cam?.sensorWidthMm||36),eq=state.focal*crop,w=Math.max(30,Math.min(220,42+eq*1.35)); sub.style.width=`${w}px`; meta.textContent=`${cam?.name||''} · ≈ ${Math.round(eq)} mm FF`; }
-function idealIsoFromLux(lux,aperture,shutterFraction){
-  if(!lux||lux<=0)return null;
-  const [a,b]=String(shutterFraction||'1/50').split('/').map(Number),t=a/b,N=Number(aperture);
-  if(!t||!N)return null;
-  return (250*N*N)/(lux*t);
+function updateFrame(){
+  const stage=document.getElementById('frameStage'),win=document.getElementById('frameWindow'),subject=document.getElementById('frameSubject'),info=document.getElementById('frameInfo'),planEl=document.getElementById('framePlan'),foot=document.getElementById('frameFoot');
+  if(!stage||!win||!subject||!info||!planEl) return;
+  const cam=currentCamera(),metrics=frameMetricsAtDistance(state.distanceCm/100),ratio=Math.max(.2,Number(state.ratio)||16/9),stageAspect=16/9;
+  let w=92,h=w*stageAspect/ratio; if(h>82){h=82;w=h*ratio/stageAspect;}
+  win.style.width=`${w}%`; win.style.height=`${h}%`;
+  const bodyScale=FRAME_SUBJECT_HEIGHT_M/Math.max(.001,metrics.frameHeight);
+  const figureHeightPct=(bodyScale/FRAME_FIGURE.bodyRatio)*100;
+  const topPct=33.333-FRAME_FIGURE.eyeRatio*figureHeightPct;
+  subject.style.height=`${figureHeightPct}%`; subject.style.top=`${topPct}%`; subject.style.width='auto';
+  const plan=closestPreviewPlan(bodyScale);
+  const short=(cam?.name||'Caméra').replace(/^Sony\s+/,'').replace(/^ARRI\s+/,'').replace(/^RED\s+/,'');
+  info.innerHTML=`<span>CAMÉRA<b>${esc(short)}</b></span><span>FOCALE<b>${state.focal} mm</b></span><span>FORMAT<b>${esc(ratioLabel(state.ratio))}</b></span><span>HFOV<b>${metrics.hfov.toFixed(1)}°</b></span>`;
+  planEl.innerHTML=`<strong>${plan}</strong><span>${esc(short)} · ${state.focal} mm · ${(state.distanceCm/100).toFixed(2).replace('.',',')} m</span>`;
+  if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
 function nearestIsoValue(target,minIso,maxIso){
   const allowed=isos.map(Number).filter(v=>v>=minIso&&v<=maxIso);
@@ -929,35 +1005,23 @@ function nearestNdForStops(stops){
   return best;
 }
 function lightExposureAdvice(lux){
-  const shutter=state.cameraShutter||'1/50',aperture=state.aperture;
-  const minIso=Number(state.cameraLimits.isoMin)||100,maxIso=Number(state.cameraLimits.isoMax)||51200;
+  const shutter='1/50',aperture=state.aperture,minIso=100,maxIso=51200;
   const ideal=idealIsoFromLux(lux,aperture,shutter);
   if(!ideal)return {text:'Réglage —',status:'normal'};
-  if(ideal<minIso){
-    const excessStops=Math.log2(minIso/ideal);
-    const nd=nearestNdForStops(excessStops);
-    return {text:`ISO ${minIso.toLocaleString('fr-FR')} (min) · ND ${nd.toFixed(1)} · f/${aperture} · ${shutter}`,status:'bright'};
-  }
-  if(ideal>maxIso){
-    const missingStops=Math.log2(ideal/maxIso);
-    return {text:`ISO ${maxIso.toLocaleString('fr-FR')} (max) · manque ${missingStops.toFixed(1).replace('.',',')} stop · f/${aperture} · ${shutter}`,status:'dark'};
-  }
-  const iso=nearestIsoValue(ideal,minIso,maxIso);
-  return {text:`ISO ${iso.toLocaleString('fr-FR')} · f/${aperture} · ${shutter}`,status:'normal'};
+  if(ideal<minIso){const excessStops=Math.log2(minIso/ideal),nd=nearestNdForStops(excessStops);return {text:`ISO 100 · ND ${nd.toFixed(1)} · f/${aperture} · 1/50`,status:'bright'};}
+  if(ideal>maxIso){const missingStops=Math.log2(ideal/maxIso);return {text:`ISO 51 200 · manque ${missingStops.toFixed(1).replace('.',',')} stop · f/${aperture} · 1/50`,status:'dark'};}
+  const iso=nearestIsoValue(ideal,minIso,maxIso); return {text:`ISO ${iso.toLocaleString('fr-FR')} · f/${aperture} · 1/50`,status:'normal'};
 }
 function updateLight(){
-  const a=document.getElementById('lux1'),b=document.getElementById('lux3'),i1=document.getElementById('iso1'),i3=document.getElementById('iso3'),note=document.getElementById('lightSourceNote'); if(!a||!b||!i1||!i3)return;
-  const fixture=currentLight();
-  if(!fixture){a.textContent='—';b.textContent='—';i1.textContent='Réglage —';i3.textContent='Réglage —';if(note)note.textContent=`${lightDatabaseSource==='remote'?'BOS-PROJECTEURS-DB · en ligne':(lightDatabaseSource==='fallback'?'BOS-PROJECTEURS-DB · secours local':'Base projecteurs indisponible')} · aucune photométrie Nu / 5600 K disponible.`;return;}
-  const at1=luxAtDistance(fixture,1),at3=luxAtDistance(fixture,3),renderLux=r=>r?`${r.exact?'':'≈ '}${Math.round(r.lux).toLocaleString('fr-FR')} lx`:'—';
-  a.textContent=renderLux(at1);b.textContent=renderLux(at3);
-  const advice1=at1?lightExposureAdvice(at1.lux):null,advice3=at3?lightExposureAdvice(at3.lux):null;
-  i1.textContent=advice1?advice1.text:'Réglage —';
-  i3.textContent=advice3?advice3.text:'Réglage —';
-  i1.dataset.status=advice1?.status||'normal';
-  i3.dataset.status=advice3?.status||'normal';
-  const calculated=[at1,at3].some(r=>r&&!r.exact),bare=fixture?.calculator?.accessories?.bare,quality=bare?.quality==='measured'?'mesure constructeur':(bare?.quality==='single'?'mesure de référence':(bare?.quality||'donnée DB'));
-  if(note){const src=lightDatabaseSource==='remote'?'en ligne':(lightDatabaseSource==='fallback'?'secours local':'indisponible');note.textContent=`BOS-PROJECTEURS-DB ${lightDatabase?.databaseVersion||''} · ${src} · ${quality}${calculated?' · ≈ = calcul de distance depuis une mesure DB':''}`;}
+  const a=document.getElementById('lux1'),b=document.getElementById('lux3'),t=document.getElementById('luxTarget'),i1=document.getElementById('iso1'),i3=document.getElementById('iso3'),it=document.getElementById('isoTarget'),tl=document.getElementById('luxTargetLabel'),note=document.getElementById('lightSourceNote'); if(!a||!b||!t||!i1||!i3||!it)return;
+  const fixture=currentLight(),targetDistance=Math.max(.1,state.distanceCm/100); if(tl)tl.textContent=`à ${targetDistance.toFixed(2).replace('.',',')} m`;
+  if(!fixture){a.textContent=b.textContent=t.textContent='—';i1.textContent=i3.textContent=it.textContent='Réglage —';if(note)note.textContent='Base projecteurs indisponible';return;}
+  const at1=luxAtDistance(fixture,1),at3=luxAtDistance(fixture,3),atT=luxAtDistance(fixture,targetDistance),renderLux=r=>r?`${r.exact?'':'≈ '}${Math.round(r.lux).toLocaleString('fr-FR')} lx`:'—';
+  a.textContent=renderLux(at1);b.textContent=renderLux(at3);t.textContent=renderLux(atT);
+  const adv1=at1?lightExposureAdvice(at1.lux):null,adv3=at3?lightExposureAdvice(at3.lux):null,advT=atT?lightExposureAdvice(atT.lux):null;
+  i1.textContent=adv1?adv1.text:'Réglage —';i3.textContent=adv3?adv3.text:'Réglage —';it.textContent=advT?advT.text:'Réglage —';i1.dataset.status=adv1?.status||'normal';i3.dataset.status=adv3?.status||'normal';it.dataset.status=advT?.status||'normal';
+  const calculated=[at1,at3,atT].some(r=>r&&!r.exact),bare=fixture?.calculator?.accessories?.bare,quality=bare?.quality==='measured'?'mesure constructeur':(bare?.quality==='single'?'mesure de référence':(bare?.quality||'donnée DB'));
+  if(note){const src=lightDatabaseSource==='remote'?'en ligne':(lightDatabaseSource==='fallback'?'secours local':'indisponible');note.textContent=`BOS-PROJECTEURS-DB ${lightDatabase?.databaseVersion||''} · ${src} · ${quality} · calcul f/${state.aperture} · 1/50${calculated?' · ≈ extrapolé':''}`;}
 }
 function renderCustomize(){ const root=document.getElementById('customizeList'); if(!root)return; root.innerHTML=state.layout.map((id,i)=>`<div class="custom-item"><input type="checkbox" data-vis="${id}" ${state.visible[id]?'checked':''}><span class="custom-name">${moduleMeta[id][0]}</span><button type="button" class="movebtn" data-up="${id}" ${i===0?'disabled':''}>↑</button><button type="button" class="movebtn" data-down="${id}" ${i===state.layout.length-1?'disabled':''}>↓</button></div>`).join(''); root.querySelectorAll('[data-vis]').forEach(x=>x.addEventListener('change',()=>{state.visible[x.dataset.vis]=x.checked;save();renderModules();})); root.querySelectorAll('[data-up]').forEach(b=>b.addEventListener('click',()=>moveModule(b.dataset.up,-1))); root.querySelectorAll('[data-down]').forEach(b=>b.addEventListener('click',()=>moveModule(b.dataset.down,1))); }
 function moveModule(id,dir){ const i=state.layout.indexOf(id),j=i+dir;if(j<0||j>=state.layout.length)return;[state.layout[i],state.layout[j]]=[state.layout[j],state.layout[i]];save();renderCustomize();renderModules(); }

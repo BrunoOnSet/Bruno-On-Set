@@ -54,6 +54,12 @@
           <div class="preset-row" id="focalPresets" aria-label="Raccourcis focale"></div>
         </div>
 
+        <div class="camera-shooting-grid">
+          <label><span>Diaph</span><select id="globalAperture"></select></label>
+          <label><span>Distance sujet</span><div class="unit-input"><input id="globalDistanceM" type="number" inputmode="decimal" min="0.30" max="50" step="0.05" value="2.50"><b>m</b></div></label>
+          <label><span>Ratio</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">16:9</strong><span>⌄</span></button></label>
+        </div>
+
         <div class="camera-gamma-block">
           <span class="field-label">Gamma</span>
           <div class="gamma-chips" id="gammaMode" aria-label="Choisir la courbe gamma"></div>
@@ -64,7 +70,7 @@
 
     <section id="modules" class="modules" aria-live="polite"></section>
 
-    <footer class="footer">BOS — Bruno OnSet · V25</footer>
+    <footer class="footer">BOS — Bruno OnSet · V26</footer>
   </main>
 
   <dialog id="customizeDialog" class="sheet">
@@ -72,6 +78,13 @@
       <div class="sheet-head"><div><strong>Personnaliser</strong></div><button value="cancel" class="iconbtn" aria-label="Fermer">×</button></div>
       <div id="customizeList" class="custom-list"></div>
       <div class="sheet-actions"><button type="button" id="resetLayout" class="secondary">Réinitialiser</button><button value="ok" class="primary">Terminé</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="ratioDialog" class="sheet ratio-sheet">
+    <form method="dialog" class="sheet-inner ratio-sheet-inner">
+      <div class="sheet-head"><div><strong>Ratio</strong></div><button value="cancel" class="ratio-close" aria-label="Fermer">×</button></div>
+      <div id="ratioList" class="ratio-choice-grid"></div>
     </form>
   </dialog>
 
