@@ -337,3 +337,12 @@ select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blu
 .bos-frame-plan{max-width:50%}
 .bos-frame-plan span{display:none}
 @media(max-width:560px){.bos-frame-distance-slider{gap:8px}.bos-frame-distance-slider strong{min-width:54px}}
+
+
+/* V29 — contrôles liés de distance dans FRAME / DOF / LIGHT + diaph dans DOF */
+.bos-linked-controls{display:grid;gap:10px;margin-top:12px}
+.bos-linked-slider{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:0 2px}
+.bos-linked-slider>span{margin:0;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.12em}
+.bos-linked-slider input{width:100%;accent-color:var(--blue)}
+.bos-linked-slider strong{min-width:60px;color:var(--text);font-size:11px;text-align:right}
+@media(max-width:560px){.bos-linked-slider{gap:8px}.bos-linked-slider strong{min-width:54px}}

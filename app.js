@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'bos-cockpit-v28';
+const STORAGE_KEY = 'bos-cockpit-v29';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -563,14 +563,35 @@ function renderGlobalCameraControls(){
 function syncGlobalLimitState(){
   /* Les alertes de limite appartiennent uniquement au module EXPO. */
 }
+function setLinkedDistanceMeters(value){
+  const v=Math.max(.30,Math.min(50,Number(value)||.30));
+  state.distanceCm=v*100;
+  const cameraDistance=document.getElementById('globalDistanceM');
+  if(cameraDistance) cameraDistance.value=v.toFixed(2);
+  save(); renderCameraSummary(); updateLive();
+}
+function setLinkedAperture(value){
+  const numeric=Number(value)||2.8;
+  const nearest=apertures.reduce((a,b)=>Math.abs(Number(b)-numeric)<Math.abs(Number(a)-numeric)?b:a,apertures[0]);
+  state.aperture=Number(nearest);
+  const cameraAperture=document.getElementById('globalAperture');
+  if(cameraAperture) cameraAperture.value=String(nearest);
+  save(); renderCameraSummary(); updateLive();
+}
+function syncDistanceRange(sliderId,readoutId){
+  const slider=document.getElementById(sliderId),readout=document.getElementById(readoutId);
+  const distanceM=Math.max(.30,(Number(state.distanceCm)||30)/100);
+  if(slider){slider.max=String(Math.max(15,Math.ceil(distanceM+1)));slider.value=distanceM.toFixed(2);}
+  if(readout) readout.textContent=`${distanceM.toFixed(2).replace('.',',')} m`;
+}
 function bindGlobal(){
   document.getElementById('cameraToggle').addEventListener('click',()=>{state.cameraOpen=!state.cameraOpen; save(); renderGlobalCameraControls();});
   document.getElementById('cameraBrandMode').addEventListener('click',e=>{const btn=e.target.closest('[data-camerabrand]'); if(!btn)return; const brand=btn.dataset.camerabrand,remembered=getLastCameraForBrand(brand),first=camerasForBrand(brand)[0]; if(remembered)applyCameraSelection(remembered); else if(first)applyCameraSelection(first.id);});
   document.getElementById('cameraSelect').addEventListener('change',e=>applyCameraSelection(e.target.value));
   document.getElementById('focalInput').addEventListener('input',e=>{state.focal=Math.max(1,Number(e.target.value)||35); save(); renderTopFocal(); renderCameraSummary(); updateLive();});
   document.getElementById('focalPresets').addEventListener('click',e=>{const btn=e.target.closest('[data-focalpreset]'); if(!btn)return; state.focal=Number(btn.dataset.focalpreset); document.getElementById('focalInput').value=state.focal; save(); renderTopFocal(); renderCameraSummary(); updateLive();});
-  const aperture=document.getElementById('globalAperture'); if(aperture){const syncA=e=>{state.aperture=Number(e.target.value)||2.8;save();renderCameraSummary();updateLive();};aperture.addEventListener('input',syncA);aperture.addEventListener('change',syncA);}
-  const distance=document.getElementById('globalDistanceM'); if(distance){const syncD=e=>{state.distanceCm=Math.max(30,(Number(e.target.value)||.3)*100);save();renderCameraSummary();updateLive();};distance.addEventListener('input',syncD);distance.addEventListener('change',syncD);}
+  const aperture=document.getElementById('globalAperture'); if(aperture){const syncA=e=>setLinkedAperture(e.target.value);aperture.addEventListener('input',syncA);aperture.addEventListener('change',syncA);}
+  const distance=document.getElementById('globalDistanceM'); if(distance){const syncD=e=>setLinkedDistanceMeters(e.target.value);distance.addEventListener('input',syncD);distance.addEventListener('change',syncD);}
   const ratioBtn=document.getElementById('ratioBtn'); if(ratioBtn) ratioBtn.addEventListener('click',()=>{renderRatioDialog();document.getElementById('ratioDialog')?.showModal();});
   const gamma=document.getElementById('gammaMode'); if(gamma) gamma.addEventListener('click',e=>{const btn=e.target.closest('[data-gamma]'); if(!btn) return; state.cameraGamma=btn.dataset.gamma; save(); renderGlobalCameraControls(); renderModules();});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
@@ -582,13 +603,13 @@ function renderModule(id){ const [title,baseSub]=moduleMeta[id],sub=id==='plan'?
 
 function renderBody(id){
   if(id==='plan') return renderPlanBody();
-  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div>${appLink(id)}`;
+  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.05" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="dofDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)))}"><strong id="dofApertureReadout">f/${state.aperture}</strong></div></div>${appLink(id)}`;
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
   if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.05" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="frameDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 
-  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
+  if(id==='light') return `<label><span>Ma lumière</span><select id="lightFixture" ${lightFixtures.length?'':'disabled'}>${lightOptionsHtml()}</select></label><div class="light-status"><span class="pill">100 %</span><span class="pill">5600 K</span><span class="pill">Nu</span><span class="pill">1/50</span></div><div class="luxgrid luxgrid-3"><div class="luxbox"><small>à 1 m</small><strong id="lux1">—</strong><div class="iso-mini" id="iso1">Réglage —</div></div><div class="luxbox"><small>à 3 m</small><strong id="lux3">—</strong><div class="iso-mini" id="iso3">Réglage —</div></div><div class="luxbox luxbox-target"><small id="luxTargetLabel">à la distance sujet</small><strong id="luxTarget">—</strong><div class="iso-mini" id="isoTarget">Réglage —</div></div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>RECUL</span><input id="lightDistanceSlider" type="range" min="0.30" max="15" step="0.05" value="${Math.max(.3,state.distanceCm/100).toFixed(2)}"><strong id="lightDistanceReadout">${(state.distanceCm/100).toFixed(2).replace('.',',')} m</strong></div></div><div class="demo" id="lightSourceNote">BOS-PROJECTEURS-DB · 100 % · 5600 K · Nu</div>${appLink(id)}`;
 
   if(id==='expo') return renderExpoWaveformBody();
   return '';
@@ -802,7 +823,10 @@ function bindModules(){
   const mc=document.getElementById('mediaCard'); if(mc)mc.addEventListener('change',e=>{state.media.card=Number(e.target.value);save();updateMedia();});
   document.querySelectorAll('[data-mediaunit]').forEach(btn=>btn.addEventListener('click',()=>switchMediaUnit(btn.dataset.mediaunit)));
   const lf=document.getElementById('lightFixture'); if(lf)lf.addEventListener('change',e=>{state.light.fixture=e.target.value;save();updateLight();});
-  const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>{const v=Math.max(.30,Math.min(50,Number(e.target.value)||.30)); state.distanceCm=v*100; save(); const cameraDistance=document.getElementById('globalDistanceM'); if(cameraDistance) cameraDistance.value=v.toFixed(2); renderCameraSummary(); updateLive();});
+  const frameDistance=document.getElementById('frameDistanceSlider'); if(frameDistance) frameDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
+  const dofDistance=document.getElementById('dofDistanceSlider'); if(dofDistance) dofDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
+  const lightDistance=document.getElementById('lightDistanceSlider'); if(lightDistance) lightDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
+  const dofAperture=document.getElementById('dofApertureSlider'); if(dofAperture) dofAperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
   const wave=document.getElementById('expoWaveSlider'); if(wave)wave.addEventListener('input',e=>updateExpoWaveformUi(e.target.value));
   const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
   document.querySelectorAll('[data-expolock]').forEach(b=>b.addEventListener('click',()=>toggleExpoLock(b.dataset.expolock)));
@@ -997,6 +1021,11 @@ function updateDOF(){
   out.textContent=`PDC ${fmtDofMm(r.total)}`;
   const sub=document.getElementById('dofSub');
   if(sub) sub.textContent=`Net de ${fmtDofMm(r.near)} à ${fmtDofMm(r.far)} · MAP ${fmtDofMm(r.s)} · ${r.f} mm · f/${r.N} · ${r.cam?.dof?.label||'capteur'}`;
+  syncDistanceRange('dofDistanceSlider','dofDistanceReadout');
+  const apertureSlider=document.getElementById('dofApertureSlider'),apertureReadout=document.getElementById('dofApertureReadout');
+  const idx=Math.max(0,apertures.findIndex(v=>Number(v)===Number(state.aperture)));
+  if(apertureSlider) apertureSlider.value=String(idx);
+  if(apertureReadout) apertureReadout.textContent=`f/${state.aperture}`;
 }
 function frameVerticalFovDeg(){
   const h=frameHfovDeg()*Math.PI/180;
@@ -1050,9 +1079,7 @@ function updateFrame(){
   }
   const plan=closestPreviewPlan(projection?.bodyScale||0);
   planEl.innerHTML=`<strong>${plan}</strong>`;
-  const distanceM=Math.max(.30,(Number(state.distanceCm)||30)/100);
-  if(distanceSlider){ distanceSlider.max=String(Math.max(15,Math.ceil(distanceM+1))); distanceSlider.value=distanceM.toFixed(2); }
-  if(distanceReadout) distanceReadout.textContent=`${distanceM.toFixed(2).replace('.',',')} m`;
+  syncDistanceRange('frameDistanceSlider','frameDistanceReadout');
   if(foot) foot.textContent=`Sujet unique · 1,80 m · champ : ${metrics.frameWidth.toFixed(2).replace('.',',')} × ${metrics.frameHeight.toFixed(2).replace('.',',')} m`;
 }
 function idealIsoFromLux(lux,aperture,shutterFraction='1/50'){
@@ -1086,6 +1113,7 @@ function lightExposureAdvice(lux){
 }
 function updateLight(){
   const a=document.getElementById('lux1'),b=document.getElementById('lux3'),t=document.getElementById('luxTarget'),i1=document.getElementById('iso1'),i3=document.getElementById('iso3'),it=document.getElementById('isoTarget'),tl=document.getElementById('luxTargetLabel'),note=document.getElementById('lightSourceNote'); if(!a||!b||!t||!i1||!i3||!it)return;
+  syncDistanceRange('lightDistanceSlider','lightDistanceReadout');
   const fixture=currentLight(),targetDistance=Math.max(.1,state.distanceCm/100); if(tl)tl.textContent=`à ${targetDistance.toFixed(2).replace('.',',')} m`;
   if(!fixture){a.textContent=b.textContent=t.textContent='—';i1.textContent=i3.textContent=it.textContent='Réglage —';if(note)note.textContent='Base projecteurs indisponible';return;}
   const at1=luxAtDistance(fixture,1),at3=luxAtDistance(fixture,3),atT=luxAtDistance(fixture,targetDistance),renderLux=r=>r?`${r.exact?'':'≈ '}${Math.round(r.lux).toLocaleString('fr-FR')} lx`:'—';
