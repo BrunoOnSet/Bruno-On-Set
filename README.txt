@@ -215,3 +215,8 @@ V56 — WHATSAPP SECONDAIRE
 - Hiérarchie : e-mail principal, puis « WhatsApp · BrunoGuillard.com ».
 - WhatsApp ouvre une conversation vers +33 6 79 97 91 11 avec « Bonjour Bruno, Je vous contacte depuis Bruno OnSet. » prérempli.
 - Version / cache / service worker incrémentés en V56.
+
+V57 — CTA PROJET
+- Le CTA principal devient : « Besoin d’un regard sur votre projet ? → ».
+- La carte de contact et sa hiérarchie restent inchangées : Écrire à Bruno, puis WhatsApp · BrunoGuillard.com.
+- Version / cache / service worker incrémentés en V57.
