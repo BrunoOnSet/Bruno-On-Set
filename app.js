@@ -1,6 +1,6 @@
-const APP_VERSION = 'V49';
-const APP_BUILD = 49;
-const STORAGE_KEY = 'bos-cockpit-v49';
+const APP_VERSION = 'V50';
+const APP_BUILD = 50;
+const STORAGE_KEY = 'bos-cockpit-v50';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -1008,6 +1008,16 @@ function bosExpoTerrainUpperValue(key){
   const boundary=slog3IreFromStopsBos(nextStop);
   return Math.max(0,Math.min(100,Math.floor(boundary-1e-6)));
 }
+function bosExpoTerrainBounds(key){
+  const bounds={
+    'shadow-low':{min:0,max:bosExpoTerrainUpperValue('shadow-low')},
+    'shadow-detail':{min:Math.ceil(slog3IreFromStopsBos(-2)),max:bosExpoTerrainUpperValue('shadow-detail')},
+    'dark-face':{min:Math.ceil(slog3IreFromStopsBos(-.75)),max:bosExpoTerrainUpperValue('dark-face')},
+    'bright-face':{min:Math.ceil(slog3IreFromStopsBos(.75)),max:bosExpoTerrainUpperValue('bright-face')},
+    'window':{min:Math.ceil(slog3IreFromStopsBos(2.5)),max:100}
+  };
+  return bounds[key] || {min:0,max:100};
+}
 function bosExpoTerrainNote(key){
   const labels={
     window:'Exemples typiques : fenêtre, ciel clair, source visible ou reflet très lumineux.',
@@ -1043,17 +1053,17 @@ function renderExpoWaveformBody(){
       <span>SIGNAL / QUALITÉ ATTENDUE</span>
       <strong id="expoWaveQuality">${esc(info.quality)}</strong>
       <small id="expoWaveQualityText">${esc(info.text)}</small>
-      <div class="bos-signal-quality-visual ${info.compression?'compression':'cleaner'}" id="expoWaveQualityVisual" role="slider" tabindex="0" aria-label="Niveau waveform" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v}"><div class="bos-signal-noise"></div><div class="bos-signal-compression"></div><i id="expoWaveQualityCursor" style="left:${5+v*.9}%"></i></div>
+      <div class="bos-signal-quality-visual ${info.compression?'compression':'cleaner'}" id="expoWaveQualityVisual" role="slider" tabindex="0" aria-label="Position dans la zone de signal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(info.progress*100)}"><div class="bos-signal-noise"></div><div class="bos-signal-compression"></div><i id="expoWaveQualityCursor" style="left:${5+info.progress*90}%"></i></div>
       <div class="bos-signal-quality-labels"><span id="expoWaveQualityLeft">${info.compression?'Plus de marge':'Bas de zone · plus fragile'}</span><span id="expoWaveQualityRight">${info.compression?'Plus comprimé':'Haut de zone · plus robuste'}</span></div>
     </div>
     <div class="bos-expo-terrain-card">
       <span>REPÈRES TERRAIN · EXEMPLES INDICATIFS</span>
       <div class="bos-terrain-strip" id="expoTerrainExamples">
-        <button type="button" data-terrain="shadow-low" class="${terrain==='shadow-low'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Ombre avec peu de détails</b><small>Très sombre</small></button>
-        <button type="button" data-terrain="shadow-detail" class="${terrain==='shadow-detail'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Ombre avec détails</b><small>Sombre</small></button>
-        <button type="button" data-terrain="dark-face" class="${terrain==='dark-face'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Visage sombre</b><small>Médium bas</small></button>
-        <button type="button" data-terrain="bright-face" class="${terrain==='bright-face'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Visage lumineux</b><small>Clair</small></button>
-        <button type="button" data-terrain="window" class="${terrain==='window'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Fenêtre / ciel</b><small>Très clair</small></button>
+        <button type="button" data-terrain="shadow-low" class="${terrain==='shadow-low'?'active':''}" title="Placer le waveform au début de cette zone"><b>Ombre avec peu de détails</b><small>Très sombre</small></button>
+        <button type="button" data-terrain="shadow-detail" class="${terrain==='shadow-detail'?'active':''}" title="Placer le waveform au début de cette zone"><b>Ombre avec détails</b><small>Sombre</small></button>
+        <button type="button" data-terrain="dark-face" class="${terrain==='dark-face'?'active':''}" title="Placer le waveform au début de cette zone"><b>Visage sombre</b><small>Médium bas</small></button>
+        <button type="button" data-terrain="bright-face" class="${terrain==='bright-face'?'active':''}" title="Placer le waveform au début de cette zone"><b>Visage lumineux</b><small>Clair</small></button>
+        <button type="button" data-terrain="window" class="${terrain==='window'?'active':''}" title="Placer le waveform au début de cette zone"><b>Fenêtre / ciel</b><small>Très clair</small></button>
       </div>
       <small class="bos-terrain-note" id="expoTerrainNote">${esc(bosExpoTerrainNote(terrain))}</small>
     </div>
@@ -1064,8 +1074,8 @@ function updateExpoWaveformUi(value,free=false){
   const info=bosExpoSignalInfo(v),terrain=bosExpoTerrainKey(v);
   const valueEl=document.getElementById('expoWaveValue'),cursor=document.getElementById('expoWaveCursor'),slider=document.getElementById('expoWaveSlider'),quality=document.getElementById('expoWaveQuality'),qualityText=document.getElementById('expoWaveQualityText'),visual=document.getElementById('expoWaveQualityVisual'),qualityCursor=document.getElementById('expoWaveQualityCursor'),left=document.getElementById('expoWaveQualityLeft'),right=document.getElementById('expoWaveQualityRight'),note=document.getElementById('expoTerrainNote');
   if(valueEl)valueEl.textContent=trimFrNumber(v,2); if(cursor)cursor.style.left=`${v}%`; if(slider)slider.value=String(v); if(quality)quality.textContent=info.quality; if(qualityText)qualityText.textContent=info.text;
-  if(visual){visual.classList.toggle('compression',info.compression);visual.classList.toggle('cleaner',!info.compression);visual.setAttribute('aria-valuenow',String(v))}
-  if(qualityCursor)qualityCursor.style.left=`${5+v*.9}%`; if(left)left.textContent=info.compression?'Plus de marge':'Bas de zone · plus fragile'; if(right)right.textContent=info.compression?'Plus comprimé':'Haut de zone · plus robuste';
+  if(visual){visual.classList.toggle('compression',info.compression);visual.classList.toggle('cleaner',!info.compression);visual.setAttribute('aria-valuenow',String(Math.round(info.progress*100)))}
+  if(qualityCursor)qualityCursor.style.left=`${5+info.progress*90}%`; if(left)left.textContent=info.compression?'Plus de marge':'Bas de zone · plus fragile'; if(right)right.textContent=info.compression?'Plus comprimé':'Haut de zone · plus robuste';
   document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(el=>el.classList.toggle('active',el.dataset.terrain===terrain)); if(note)note.textContent=bosExpoTerrainNote(terrain);
   save();
 }
@@ -1133,10 +1143,13 @@ function renderExpoCalcItem(k){
 function setExpoFromQualityPointer(event,host){
   const rect=host.getBoundingClientRect();
   if(!rect.width) return;
-  // Cursor has a small 5% visual inset; map the usable 90% span back to 0–100 waveform.
   const raw=(event.clientX-rect.left)/rect.width;
   const normalized=Math.max(0,Math.min(1,(raw-.05)/.90));
-  updateExpoWaveformUi(normalized*100);
+  const terrain=bosExpoTerrainKey(Number(state.expo?.read)||0);
+  const bounds=bosExpoTerrainBounds(terrain);
+  const span=Math.max(0,bounds.max-bounds.min);
+  const target=span<=0 ? bounds.min : bounds.min + normalized*span;
+  updateExpoWaveformUi(target);
 }
 function bindModules(){
   bindPlanModule();
@@ -1154,7 +1167,7 @@ function bindModules(){
   const lightDistance=document.getElementById('lightDistanceSlider'); if(lightDistance) lightDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
   const dofAperture=document.getElementById('dofApertureSlider'); if(dofAperture) dofAperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
   const wave=document.getElementById('expoWaveSlider'); if(wave)wave.addEventListener('input',e=>updateExpoWaveformUi(e.target.value));
-  document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(btn=>btn.addEventListener('click',()=>updateExpoWaveformUi(bosExpoTerrainUpperValue(btn.dataset.terrain))));
+  document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(btn=>btn.addEventListener('click',()=>{const bounds=bosExpoTerrainBounds(btn.dataset.terrain); updateExpoWaveformUi(bounds.min);}));
   const qualityVisual=document.getElementById('expoWaveQualityVisual');
   if(qualityVisual){
     qualityVisual.addEventListener('pointerdown',e=>{qualityVisual.setPointerCapture?.(e.pointerId);setExpoFromQualityPointer(e,qualityVisual);});
@@ -1164,8 +1177,14 @@ function bindModules(){
     qualityVisual.addEventListener('keydown',e=>{
       if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
       e.preventDefault();
+      const terrain=bosExpoTerrainKey(Number(state.expo?.read)||0);
+      const bounds=bosExpoTerrainBounds(terrain);
       const current=Number(state.expo?.read)||0;
-      const next=e.key==='Home'?0:e.key==='End'?100:current+(e.key==='ArrowRight'?1:-1);
+      let next=current;
+      if(e.key==='Home') next=bounds.min;
+      else if(e.key==='End') next=bounds.max;
+      else next=current+(e.key==='ArrowRight'?1:-1);
+      next=Math.max(bounds.min,Math.min(bounds.max,next));
       updateExpoWaveformUi(next);
     });
   }

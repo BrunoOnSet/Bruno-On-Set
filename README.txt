@@ -172,3 +172,10 @@ V49 — CTA PROFESSIONNEL
 - Prestations affichées : Direction de la photographie / Conseil · préparation image.
 - Aucun WhatsApp/e-mail n'est encore câblé dans cette version : cette itération sert à valider le placement et la présentation.
 - Version / cache / service worker incrémentés en V49.
+
+V50 — CTA + SIGNAL / QUALITÉ PAR ZONE
+- Dans la carte « Parler de votre tournage », ajout d’un lien secondaire discret : BrunoGuillard.com.
+- Dans EXPO, le schéma horizontal « Signal / qualité attendue » fonctionne désormais à l’échelle de la zone active.
+- Quand on change de repère terrain, le niveau revient au début de la zone (à gauche du schéma), puis le curseur agit à l’intérieur de cette zone.
+- Le clic / glisser sur le schéma « Signal / qualité attendue » déplace maintenant le waveform à l’intérieur de la zone courante.
+- Version / cache / service worker incrémentés en V50.
