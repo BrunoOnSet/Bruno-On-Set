@@ -193,3 +193,7 @@ V52 — schéma des zones EXPO aligné sur BOS_EXPO V3.65
 - Les boutons de repères terrain pointent à nouveau exactement vers la bonne famille de zone (notamment Fenêtre / ciel).
 - Le repère SIGNAL / QUALITÉ reste local à la zone active et repart à gauche quand on change de zone.
 - Si le profil ne permet pas une conversion fiable waveform ↔ diaph, le message d’aide l’indique explicitement.
+
+V53 — CTA PROJET
+- Le CTA principal devient : « Échangeons autour de votre projet → ».
+- Version / cache / service worker incrémentés en V53.
