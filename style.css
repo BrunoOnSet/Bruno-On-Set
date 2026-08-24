@@ -653,3 +653,45 @@ input[type="range"],
 }
 
 .bos-wave-help.no-stops{color:var(--muted);font-weight:800;}
+
+
+/* V54 — action e-mail principale dans la carte projet */
+.project-actions{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:12px;
+  margin-top:18px;
+}
+.project-email-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:40px;
+  padding:0 15px;
+  border:1px solid #2F5B66;
+  border-radius:999px;
+  background:#2F5B66;
+  color:#fff;
+  text-decoration:none;
+  font-family:"Montserrat",Arial,sans-serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.01em;
+}
+.project-email-btn span{
+  transition:transform .16s ease;
+}
+.project-email-btn:hover span{transform:translateX(3px)}
+.project-email-btn:focus-visible{
+  outline:2px solid #2F5B66;
+  outline-offset:3px;
+}
+.project-actions .project-site-link{
+  margin-top:0;
+}
+:root[data-theme="dark"] .project-email-btn{
+  background:#7FA7B0;
+  border-color:#7FA7B0;
+  color:#101315;
+}

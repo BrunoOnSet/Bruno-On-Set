@@ -197,3 +197,9 @@ V52 — schéma des zones EXPO aligné sur BOS_EXPO V3.65
 V53 — CTA PROJET
 - Le CTA principal devient : « Échangeons autour de votre projet → ».
 - Version / cache / service worker incrémentés en V53.
+
+V54 — CONTACT PROJET
+- La carte « Échangeons autour de votre projet » contient désormais un bouton principal « Écrire à Bruno → ».
+- Le bouton ouvre l’application e-mail avec l’adresse brunoguillardcontact@gmail.com, l’objet « Projet de tournage — Bruno OnSet » et un début de message prérempli.
+- BrunoGuillard.com reste un lien secondaire discret.
+- Version / cache / service worker incrémentés en V54.
