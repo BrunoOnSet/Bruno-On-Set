@@ -179,3 +179,10 @@ V50 — CTA + SIGNAL / QUALITÉ PAR ZONE
 - Quand on change de repère terrain, le niveau revient au début de la zone (à gauche du schéma), puis le curseur agit à l’intérieur de cette zone.
 - Le clic / glisser sur le schéma « Signal / qualité attendue » déplace maintenant le waveform à l’intérieur de la zone courante.
 - Version / cache / service worker incrémentés en V50.
+
+V51 — CORRECTIF SIGNAL / QUALITÉ
+- Correction de l’interprétation V50 : les repères terrain gardent leur comportement d’origine et placent le waveform au haut de leur zone indicative.
+- La barre SIGNAL / QUALITÉ ATTENDUE est désormais locale à la zone de qualité réelle (PIED, OMBRES, MÉDIUMS, HAUTES, TRÈS HAUTES, EXTRÊMES).
+- En entrant dans une nouvelle zone de qualité, le curseur repart bien à gauche du schéma, sans changer le libellé de qualité propre à cette zone.
+- Fenêtre / ciel retrouve donc son comportement et sa qualité d’origine au lieu d’être reclassé artificiellement en « BONNE ».
+- Version / cache / service worker incrémentés en V51.

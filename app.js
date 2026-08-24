@@ -1,6 +1,6 @@
-const APP_VERSION = 'V50';
-const APP_BUILD = 50;
-const STORAGE_KEY = 'bos-cockpit-v50';
+const APP_VERSION = 'V51';
+const APP_BUILD = 51;
+const STORAGE_KEY = 'bos-cockpit-v51';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -1059,11 +1059,11 @@ function renderExpoWaveformBody(){
     <div class="bos-expo-terrain-card">
       <span>REPÈRES TERRAIN · EXEMPLES INDICATIFS</span>
       <div class="bos-terrain-strip" id="expoTerrainExamples">
-        <button type="button" data-terrain="shadow-low" class="${terrain==='shadow-low'?'active':''}" title="Placer le waveform au début de cette zone"><b>Ombre avec peu de détails</b><small>Très sombre</small></button>
-        <button type="button" data-terrain="shadow-detail" class="${terrain==='shadow-detail'?'active':''}" title="Placer le waveform au début de cette zone"><b>Ombre avec détails</b><small>Sombre</small></button>
-        <button type="button" data-terrain="dark-face" class="${terrain==='dark-face'?'active':''}" title="Placer le waveform au début de cette zone"><b>Visage sombre</b><small>Médium bas</small></button>
-        <button type="button" data-terrain="bright-face" class="${terrain==='bright-face'?'active':''}" title="Placer le waveform au début de cette zone"><b>Visage lumineux</b><small>Clair</small></button>
-        <button type="button" data-terrain="window" class="${terrain==='window'?'active':''}" title="Placer le waveform au début de cette zone"><b>Fenêtre / ciel</b><small>Très clair</small></button>
+        <button type="button" data-terrain="shadow-low" class="${terrain==='shadow-low'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Ombre avec peu de détails</b><small>Très sombre</small></button>
+        <button type="button" data-terrain="shadow-detail" class="${terrain==='shadow-detail'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Ombre avec détails</b><small>Sombre</small></button>
+        <button type="button" data-terrain="dark-face" class="${terrain==='dark-face'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Visage sombre</b><small>Médium bas</small></button>
+        <button type="button" data-terrain="bright-face" class="${terrain==='bright-face'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Visage lumineux</b><small>Clair</small></button>
+        <button type="button" data-terrain="window" class="${terrain==='window'?'active':''}" title="Placer le waveform au haut de cette zone"><b>Fenêtre / ciel</b><small>Très clair</small></button>
       </div>
       <small class="bos-terrain-note" id="expoTerrainNote">${esc(bosExpoTerrainNote(terrain))}</small>
     </div>
@@ -1145,11 +1145,13 @@ function setExpoFromQualityPointer(event,host){
   if(!rect.width) return;
   const raw=(event.clientX-rect.left)/rect.width;
   const normalized=Math.max(0,Math.min(1,(raw-.05)/.90));
-  const terrain=bosExpoTerrainKey(Number(state.expo?.read)||0);
-  const bounds=bosExpoTerrainBounds(terrain);
-  const span=Math.max(0,bounds.max-bounds.min);
-  const target=span<=0 ? bounds.min : bounds.min + normalized*span;
-  updateExpoWaveformUi(target);
+  const current=Number(state.expo?.read)||0;
+  const zone=bosExpoWaveZone(current);
+  const min=Math.max(0,Number(zone.min)||0);
+  const max=Math.min(100,Number(zone.max)||100);
+  const span=Math.max(0,max-min);
+  const target=span<=0 ? min : min + normalized*span;
+  updateExpoWaveformUi(target,true);
 }
 function bindModules(){
   bindPlanModule();
@@ -1167,7 +1169,7 @@ function bindModules(){
   const lightDistance=document.getElementById('lightDistanceSlider'); if(lightDistance) lightDistance.addEventListener('input',e=>setLinkedDistanceMeters(e.target.value));
   const dofAperture=document.getElementById('dofApertureSlider'); if(dofAperture) dofAperture.addEventListener('input',e=>{const idx=Math.max(0,Math.min(apertures.length-1,Math.round(Number(e.target.value)||0)));setLinkedAperture(apertures[idx]);});
   const wave=document.getElementById('expoWaveSlider'); if(wave)wave.addEventListener('input',e=>updateExpoWaveformUi(e.target.value));
-  document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(btn=>btn.addEventListener('click',()=>{const bounds=bosExpoTerrainBounds(btn.dataset.terrain); updateExpoWaveformUi(bounds.min);}));
+  document.querySelectorAll('#expoTerrainExamples [data-terrain]').forEach(btn=>btn.addEventListener('click',()=>updateExpoWaveformUi(bosExpoTerrainUpperValue(btn.dataset.terrain))));
   const qualityVisual=document.getElementById('expoWaveQualityVisual');
   if(qualityVisual){
     qualityVisual.addEventListener('pointerdown',e=>{qualityVisual.setPointerCapture?.(e.pointerId);setExpoFromQualityPointer(e,qualityVisual);});
@@ -1177,15 +1179,16 @@ function bindModules(){
     qualityVisual.addEventListener('keydown',e=>{
       if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
       e.preventDefault();
-      const terrain=bosExpoTerrainKey(Number(state.expo?.read)||0);
-      const bounds=bosExpoTerrainBounds(terrain);
       const current=Number(state.expo?.read)||0;
+      const zone=bosExpoWaveZone(current);
+      const min=Math.max(0,Number(zone.min)||0);
+      const max=Math.min(100,Number(zone.max)||100);
       let next=current;
-      if(e.key==='Home') next=bounds.min;
-      else if(e.key==='End') next=bounds.max;
+      if(e.key==='Home') next=min;
+      else if(e.key==='End') next=max;
       else next=current+(e.key==='ArrowRight'?1:-1);
-      next=Math.max(bounds.min,Math.min(bounds.max,next));
-      updateExpoWaveformUi(next);
+      next=Math.max(min,Math.min(max,next));
+      updateExpoWaveformUi(next,true);
     });
   }
   const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
