@@ -160,3 +160,8 @@ V47 — ICÔNE APP + ORDRE PAR DÉFAUT
 - icons/icon-192.png et icons/icon-512.png régénérées à partir de cette image.
 - Ordre par défaut et ordre restauré par Réinitialiser : FRAME → DOF → EXPO → LIGHT → PLAN → MEDIA.
 - Version / cache / service worker incrémentés en V47.
+
+V48 — BULLES FERMÉES PAR DÉFAUT
+- CAMÉRA, FRAME, DOF, EXPO, LIGHT, PLAN et MEDIA sont fermées par défaut.
+- Le bouton Réinitialiser remet également toutes les bulles en position fermée.
+- Version / cache / service worker incrémentés en V48.

@@ -1,6 +1,6 @@
-const APP_VERSION = 'V47';
-const APP_BUILD = 47;
-const STORAGE_KEY = 'bos-cockpit-v47';
+const APP_VERSION = 'V48';
+const APP_BUILD = 48;
+const STORAGE_KEY = 'bos-cockpit-v48';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -40,9 +40,10 @@ const defaultState = {
   cameraShutter: '1/50',
   cameraIso: '800',
   distanceCm: 250,
+  cameraOpen: false,
   layout: ['frame', 'dof', 'expo', 'light', 'plan', 'media'],
   visible: { frame: true, dof: true, light: true, media: true, plan: true, expo: true },
-  open: { frame: true, dof: true, light: false, media: false, plan: true, expo: false },
+  open: { frame: false, dof: false, expo: false, light: false, plan: false, media: false },
   media: { bitrate: 250, unit: 'Mb/s', card: 256 },
   light: { fixture: 'cob200xs' },
   plan: { selectedId: null },
@@ -105,7 +106,7 @@ function normalizeState(){
   state.frameCameraHeightM = Math.max(0.50, Math.min(2.50, Number(state.frameCameraHeightM) || 1.55));
   if(!state.cameraShutter) state.cameraShutter = '1/50';
   if(!state.cameraIso) state.cameraIso = '800';
-  if(typeof state.cameraOpen !== 'boolean') state.cameraOpen = true;
+  if(typeof state.cameraOpen !== 'boolean') state.cameraOpen = false;
   state.distanceCm = Math.max(30, Number(state.distanceCm) || 250);
   if(!state.media.unit) state.media.unit = 'Mb/s';
   if(!state.expo) state.expo = clone(defaultState.expo);
@@ -891,7 +892,7 @@ function bindGlobal(){
   const pickerModelChoices=document.getElementById('pickerModelChoices'); if(pickerModelChoices) pickerModelChoices.addEventListener('click',e=>{const b=e.target.closest('[data-picker-fixture]'); if(!b)return; selectProjectorFromPicker(b.dataset.pickerFixture);});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
-  document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);save();renderCustomize();renderModules();});
+  document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);state.cameraOpen=false;save();renderGlobalCameraControls();renderCustomize();renderModules();});
   bindFreeValueEditing();
 }
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
