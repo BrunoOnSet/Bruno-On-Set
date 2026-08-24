@@ -220,3 +220,10 @@ V57 — CTA PROJET
 - Le CTA principal devient : « Besoin d’un regard sur votre projet ? → ».
 - La carte de contact et sa hiérarchie restent inchangées : Écrire à Bruno, puis WhatsApp · BrunoGuillard.com.
 - Version / cache / service worker incrémentés en V57.
+
+V58 — POSITIONNEMENT RÉALISATION
+- Suppression de « Vous préparez un projet ? » dans la carte de contact.
+- Le positionnement devient : « Réalisateur · Directeur de la photographie · Consultant image ».
+- Ajout de « Réalisation » parmi les prestations.
+- Le texte de présentation mentionne désormais la mise en scène, en plus des intentions d’image et du dispositif de tournage.
+- Version / cache / service worker incrémentés en V58.
