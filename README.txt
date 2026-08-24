@@ -154,3 +154,9 @@ V46 — LOGO + EXPO INTERACTIF + LIGHT
 - La barre « Signal / qualité attendue » est cliquable et déplaçable ; elle pilote en direct le niveau waveform supérieur.
 - Les informations LIGHT 100 %, 5600 K, Nu et 1/50 sont désormais affichées comme texte simple, sans bulles.
 - Cache / service worker / version incrémentés en V46 ; migration d'état depuis V45/V44/V43/V42 ajoutée.
+
+V47 — ICÔNE APP + ORDRE PAR DÉFAUT
+- Icône d'application remplacée par l'image exacte fournie par l'utilisateur (BOS avec point dans le O).
+- icons/icon-192.png et icons/icon-512.png régénérées à partir de cette image.
+- Ordre par défaut et ordre restauré par Réinitialiser : FRAME → DOF → EXPO → LIGHT → PLAN → MEDIA.
+- Version / cache / service worker incrémentés en V47.
