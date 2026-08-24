@@ -651,3 +651,5 @@ input[type="range"],
   color:#2F5B66;
   text-decoration:underline;
 }
+
+.bos-wave-help.no-stops{color:var(--muted);font-weight:800;}

@@ -186,3 +186,10 @@ V51 — CORRECTIF SIGNAL / QUALITÉ
 - En entrant dans une nouvelle zone de qualité, le curseur repart bien à gauche du schéma, sans changer le libellé de qualité propre à cette zone.
 - Fenêtre / ciel retrouve donc son comportement et sa qualité d’origine au lieu d’être reclassé artificiellement en « BONNE ».
 - Version / cache / service worker incrémentés en V51.
+
+V52 — schéma des zones EXPO aligné sur BOS_EXPO V3.65
+- Le module EXPO de Bruno OnSet reprend désormais le même schéma de zones que l’application EXPO de référence.
+- S-Log3 et S-Cinetone disposent chacun de leurs zones, repères terrain et logique SIGNAL / QUALITÉ attendue.
+- Les boutons de repères terrain pointent à nouveau exactement vers la bonne famille de zone (notamment Fenêtre / ciel).
+- Le repère SIGNAL / QUALITÉ reste local à la zone active et repart à gauche quand on change de zone.
+- Si le profil ne permet pas une conversion fiable waveform ↔ diaph, le message d’aide l’indique explicitement.
