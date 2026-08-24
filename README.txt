@@ -147,3 +147,10 @@ V45 — SLOGAN D'ENTÊTE
 - Slogan validé : « Avec vous, sur chaque tournage. »
 - Slogan en Montserrat regular, noir (#17191C).
 - Version / cache / service worker incrémentés en V45.
+
+V46 — LOGO + EXPO INTERACTIF + LIGHT
+- Logo d'entête remplacé par l'image BOS V3 exacte fournie par l'utilisateur, sans modification.
+- Les cinq repères terrain EXPO sont cliquables et placent le waveform au pourcentage entier le plus haut restant dans la zone correspondante.
+- La barre « Signal / qualité attendue » est cliquable et déplaçable ; elle pilote en direct le niveau waveform supérieur.
+- Les informations LIGHT 100 %, 5600 K, Nu et 1/50 sont désormais affichées comme texte simple, sans bulles.
+- Cache / service worker / version incrémentés en V46 ; migration d'état depuis V45/V44/V43/V42 ajoutée.
