@@ -203,3 +203,15 @@ V54 — CONTACT PROJET
 - Le bouton ouvre l’application e-mail avec l’adresse brunoguillardcontact@gmail.com, l’objet « Projet de tournage — Bruno OnSet » et un début de message prérempli.
 - BrunoGuillard.com reste un lien secondaire discret.
 - Version / cache / service worker incrémentés en V54.
+
+V55 — MESSAGE CONTACT
+- Le message e-mail prérempli devient simplement : « Bonjour Bruno, Je vous contacte depuis Bruno OnSet. »
+- Suppression de « au sujet d’un projet ».
+- Version / cache / service worker incrémentés en V55.
+
+V56 — WHATSAPP SECONDAIRE
+- Ajout de WhatsApp comme contact secondaire, sous le bouton principal « Écrire à Bruno → ».
+- Présentation volontairement sobre : texte simple, sans bouton vert ni logo.
+- Hiérarchie : e-mail principal, puis « WhatsApp · BrunoGuillard.com ».
+- WhatsApp ouvre une conversation vers +33 6 79 97 91 11 avec « Bonjour Bruno, Je vous contacte depuis Bruno OnSet. » prérempli.
+- Version / cache / service worker incrémentés en V56.

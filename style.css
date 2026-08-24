@@ -695,3 +695,31 @@ input[type="range"],
   border-color:#7FA7B0;
   color:#101315;
 }
+
+
+/* V56 — WhatsApp secondaire, sans traitement visuel "support" */
+.project-secondary-links{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  color:var(--muted);
+  font-family:"Montserrat",Arial,sans-serif;
+  font-size:11px;
+  line-height:1.35;
+}
+.project-secondary-link{
+  color:var(--muted);
+  text-decoration:none;
+  font-weight:700;
+  letter-spacing:.01em;
+}
+.project-secondary-link:hover,
+.project-secondary-link:focus-visible{
+  color:#2F5B66;
+  text-decoration:underline;
+}
+:root[data-theme="dark"] .project-secondary-link:hover,
+:root[data-theme="dark"] .project-secondary-link:focus-visible{
+  color:#7FA7B0;
+}
