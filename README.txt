@@ -165,3 +165,10 @@ V48 — BULLES FERMÉES PAR DÉFAUT
 - CAMÉRA, FRAME, DOF, EXPO, LIGHT, PLAN et MEDIA sont fermées par défaut.
 - Le bouton Réinitialiser remet également toutes les bulles en position fermée.
 - Version / cache / service worker incrémentés en V48.
+
+V49 — CTA PROFESSIONNEL
+- Ajout du CTA discret « Parler de votre tournage → » sous les modules et avant le footer.
+- Au clic : carte premium présentant Bruno Guillard, Directeur de la photographie · Consultant image.
+- Prestations affichées : Direction de la photographie / Conseil · préparation image.
+- Aucun WhatsApp/e-mail n'est encore câblé dans cette version : cette itération sert à valider le placement et la présentation.
+- Version / cache / service worker incrémentés en V49.

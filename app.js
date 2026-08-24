@@ -1,6 +1,6 @@
-const APP_VERSION = 'V48';
-const APP_BUILD = 48;
-const STORAGE_KEY = 'bos-cockpit-v48';
+const APP_VERSION = 'V49';
+const APP_BUILD = 49;
+const STORAGE_KEY = 'bos-cockpit-v49';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -891,6 +891,10 @@ function bindGlobal(){
   const pickerFamilyChoices=document.getElementById('pickerFamilyChoices'); if(pickerFamilyChoices) pickerFamilyChoices.addEventListener('click',e=>{const b=e.target.closest('[data-picker-family]'); if(!b)return; lightPickerFamily=b.dataset.pickerFamily; renderProjectorPicker();});
   const pickerModelChoices=document.getElementById('pickerModelChoices'); if(pickerModelChoices) pickerModelChoices.addEventListener('click',e=>{const b=e.target.closest('[data-picker-fixture]'); if(!b)return; selectProjectorFromPicker(b.dataset.pickerFixture);});
   document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark'; save(); setupTheme();});
+  const projectDialog=document.getElementById('projectDialog');
+  const projectContactBtn=document.getElementById('projectContactBtn');
+  if(projectContactBtn && projectDialog) projectContactBtn.addEventListener('click',()=>projectDialog.showModal());
+  if(projectDialog) projectDialog.addEventListener('click',e=>{if(e.target===projectDialog)projectDialog.close();});
   const dlg=document.getElementById('customizeDialog'); document.getElementById('customizeBtn').addEventListener('click',()=>{renderCustomize();dlg.showModal();});
   document.getElementById('resetLayout').addEventListener('click',()=>{state.layout=clone(defaultState.layout);state.visible=clone(defaultState.visible);state.open=clone(defaultState.open);state.cameraOpen=false;save();renderGlobalCameraControls();renderCustomize();renderModules();});
   bindFreeValueEditing();
