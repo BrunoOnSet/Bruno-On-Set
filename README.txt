@@ -260,3 +260,11 @@ V63 — ESPACEMENTS HAUT DE PAGE RESSERRÉS
 - « Une question ? Un projet ? On en parle. → » est aussi rapproché de « Personnaliser ».
 - Le haut de page forme désormais un ensemble plus compact.
 - Version / cache / service worker incrémentés en V63.
+
+V64 — RESET + FEEDBACK + HAUT RESSERRÉ
+- « Une question ? Un projet ? On en parle. → » est encore rapproché de l’entête.
+- Ajout d’un bouton RESET juste à côté de PERSONNALISER, avec exactement le même style visuel.
+- RESET reprend le même comportement que « Réinitialiser » : ordre/visibilité par défaut et toutes les bulles refermées.
+- Ajout tout en bas de « Une idée pour améliorer l’application ? → ».
+- Ce lien ouvre directement l’e-mail vers brunoguillardcontact@gmail.com avec l’objet « Suggestion — Bruno OnSet ».
+- Version / cache / service worker incrémentés en V64.

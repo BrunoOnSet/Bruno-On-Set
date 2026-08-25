@@ -830,3 +830,64 @@ header.bos-header{
 .utility-row.bos-utility-row{
   margin-top:2px !important;
 }
+
+
+/* V64 — haut de page plus compact */
+.topbar{
+  margin-bottom:2px !important;
+}
+.install-app-row{
+  margin:0 2px 0 !important;
+}
+.project-contact-top{
+  padding:2px 0 2px !important;
+  margin:0 2px 0 !important;
+}
+.utility-row.bos-utility-row{
+  margin-top:0 !important;
+  margin-bottom:12px !important;
+}
+
+/* Reset identique à Personnaliser */
+#quickResetBtn{
+  /* hérite volontairement de .utility-link */
+}
+
+/* Suggestion d'amélioration tout en bas */
+.feedback-contact{
+  display:flex;
+  justify-content:center;
+  padding:24px 0 2px;
+}
+.feedback-contact-link{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  padding:6px 2px;
+  font-family:"Montserrat",Arial,sans-serif;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.01em;
+  text-decoration:none;
+}
+.feedback-contact-link span{
+  display:inline-block;
+  margin-left:4px;
+  transition:transform .16s ease;
+}
+.feedback-contact-link:hover,
+.feedback-contact-link:focus-visible{
+  color:#2F5B66;
+}
+.feedback-contact-link:hover span{
+  transform:translateX(3px);
+}
+.feedback-contact-link:focus-visible{
+  outline:2px solid #2F5B66;
+  outline-offset:4px;
+  border-radius:4px;
+}
+:root[data-theme="dark"] .feedback-contact-link:hover,
+:root[data-theme="dark"] .feedback-contact-link:focus-visible{
+  color:#7FA7B0;
+}
