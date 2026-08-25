@@ -788,3 +788,15 @@ input[type="range"],
     padding-top:10px;
   }
 }
+
+
+/* V61 — installation au-dessus de l’entête + CTA projet reformulé */
+.install-app-row{
+  margin:0 2px 8px;
+}
+.project-contact-top{
+  padding:8px 0 6px;
+}
+.project-contact-top .project-contact-btn{
+  font-size:11px;
+}

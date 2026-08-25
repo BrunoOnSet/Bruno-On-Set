@@ -243,3 +243,9 @@ V60 — CTA SOUS L’ENTÊTE
 - Traitement volontairement discret : texte simple, sans carte, avant le bouton d’installation.
 - Le bouton d’installation PWA reste présent sous le CTA quand pertinent.
 - Version / cache / service worker incrémentés en V60.
+
+V61 — CTA PROXIMITÉ + INSTALLATION EN HAUT
+- Le CTA projet devient : « Une question ? Un projet ? On en parle. → ».
+- Le bouton « INSTALLER L’APPLICATION → » est déplacé tout en haut, au-dessus de l’entête.
+- Le CTA projet reste sous l’entête, pour éviter d’avoir les deux éléments côte à côte.
+- Version / cache / service worker incrémentés en V61.
