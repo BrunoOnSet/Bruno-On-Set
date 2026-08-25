@@ -227,3 +227,12 @@ V58 — POSITIONNEMENT RÉALISATION
 - Ajout de « Réalisation » parmi les prestations.
 - Le texte de présentation mentionne désormais la mise en scène, en plus des intentions d’image et du dispositif de tournage.
 - Version / cache / service worker incrémentés en V58.
+
+V59 — BOUTON INSTALLATION
+- Ajout sous l’entête d’un bouton discret « INSTALLER L’APPLICATION → ».
+- Android / navigateurs Chromium : utilise la fenêtre d’installation native quand `beforeinstallprompt` est disponible.
+- iPhone / iPad : affiche l’instruction Safari « Partager → Ajouter à l’écran d’accueil ».
+- Autres navigateurs : affiche une instruction générique d’installation / ajout à l’écran d’accueil.
+- Le bouton est masqué en mode PWA `standalone` et après une installation détectée.
+- Toutes les bulles restent fermées par défaut.
+- Version / cache / service worker incrémentés en V59.

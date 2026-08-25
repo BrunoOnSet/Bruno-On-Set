@@ -7,13 +7,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>BOS — Bruno OnSet</title>
-  <link rel="manifest" href="manifest.webmanifest?v=58" />
+  <link rel="manifest" href="manifest.webmanifest?v=59" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=58" />
+  <link rel="stylesheet" href="style.css?v=59" />
 </head>
 <body>
   <main class="shell">
@@ -35,7 +35,11 @@
       </div>
     </header>
 
-
+    <section class="install-app-row" id="installAppRow" hidden aria-label="Installer Bruno OnSet">
+      <button class="install-app-btn" id="installAppBtn" type="button">
+        INSTALLER L’APPLICATION <span aria-hidden="true">→</span>
+      </button>
+    </section>
 
     <div class="utility-row bos-utility-row">
       <button class="utility-link" id="customizeBtn" type="button">PERSONNALISER</button>
@@ -73,9 +77,25 @@
       </button>
     </section>
 
-    <footer class="footer">BOS — Bruno OnSet · V58</footer>
+    <footer class="footer">BOS — Bruno OnSet · V59</footer>
   </main>
 
+
+  <dialog id="installDialog" class="sheet install-sheet">
+    <form method="dialog" class="sheet-inner install-sheet-inner">
+      <div class="sheet-head">
+        <div>
+          <strong>Installer Bruno OnSet</strong>
+          <small id="installHelpText">Ajoutez l’application à votre écran d’accueil.</small>
+        </div>
+        <button value="close" class="iconbtn" aria-label="Fermer">×</button>
+      </div>
+      <div class="install-help" id="installHelpBody"></div>
+      <div class="sheet-actions">
+        <button value="close" class="primary">Compris</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="projectDialog" class="sheet project-sheet">
     <form method="dialog" class="sheet-inner project-sheet-inner">
@@ -157,6 +177,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=58" defer></script>
+  <script src="app.js?v=59" defer></script>
 </body>
 </html>

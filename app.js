@@ -1,6 +1,6 @@
-const APP_VERSION = 'V58';
-const APP_BUILD = 58;
-const STORAGE_KEY = 'bos-cockpit-v58';
+const APP_VERSION = 'V59';
+const APP_BUILD = 59;
+const STORAGE_KEY = 'bos-cockpit-v59';
 const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
@@ -555,6 +555,93 @@ async function setupAppUpdateSystem(){
   }
 }
 
+
+let bosDeferredInstallPrompt = null;
+const BOS_INSTALLED_KEY = 'bos-onset-installed';
+
+function bosIsStandalone(){
+  return window.matchMedia?.('(display-mode: standalone)').matches === true ||
+         window.navigator.standalone === true;
+}
+function bosIsIos(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function bosInstalledRemembered(){
+  try{return localStorage.getItem(BOS_INSTALLED_KEY)==='1';}catch(_){return false;}
+}
+function bosRememberInstalled(){
+  try{localStorage.setItem(BOS_INSTALLED_KEY,'1');}catch(_){}
+}
+function updateInstallAppVisibility(){
+  const row=document.getElementById('installAppRow');
+  if(!row)return;
+  if(bosIsStandalone()){
+    bosRememberInstalled();
+    row.hidden=true;
+    return;
+  }
+  if(bosInstalledRemembered()){
+    row.hidden=true;
+    return;
+  }
+  row.hidden=false;
+}
+function showBosInstallHelp(){
+  const dlg=document.getElementById('installDialog');
+  const body=document.getElementById('installHelpBody');
+  const intro=document.getElementById('installHelpText');
+  if(!dlg||!body)return;
+  if(bosIsIos()){
+    if(intro)intro.textContent='Installation sur iPhone / iPad';
+    body.innerHTML='<p><strong>Safari :</strong> touchez le bouton <strong>Partager</strong>, puis <strong>Ajouter à l’écran d’accueil</strong>.</p><p>Une fois Bruno OnSet lancé depuis son icône, ce bouton d’installation disparaît automatiquement.</p>';
+  }else{
+    if(intro)intro.textContent='Installation depuis votre navigateur';
+    body.innerHTML='<p>Ouvrez le menu de votre navigateur puis choisissez <strong>Installer l’application</strong> ou <strong>Ajouter à l’écran d’accueil</strong>.</p><p>Une fois Bruno OnSet lancé comme application, ce bouton disparaît automatiquement.</p>';
+  }
+  dlg.showModal();
+}
+function setupBosInstallExperience(){
+  updateInstallAppVisibility();
+
+  window.addEventListener('beforeinstallprompt',event=>{
+    event.preventDefault();
+    bosDeferredInstallPrompt=event;
+    updateInstallAppVisibility();
+  });
+
+  window.addEventListener('appinstalled',()=>{
+    bosDeferredInstallPrompt=null;
+    bosRememberInstalled();
+    updateInstallAppVisibility();
+  });
+
+  const displayMode=window.matchMedia?.('(display-mode: standalone)');
+  displayMode?.addEventListener?.('change',updateInstallAppVisibility);
+
+  const btn=document.getElementById('installAppBtn');
+  if(btn){
+    btn.addEventListener('click',async()=>{
+      if(bosIsStandalone()){
+        updateInstallAppVisibility();
+        return;
+      }
+      if(bosDeferredInstallPrompt){
+        const prompt=bosDeferredInstallPrompt;
+        bosDeferredInstallPrompt=null;
+        try{
+          await prompt.prompt();
+          const choice=await prompt.userChoice;
+          if(choice?.outcome==='accepted') bosRememberInstalled();
+        }catch(_){}
+        updateInstallAppVisibility();
+        return;
+      }
+      showBosInstallHelp();
+    });
+  }
+}
+
 async function init(){
   const [cameraResult,lightResult] = await Promise.allSettled([loadSharedCameraDatabase(),loadSharedLightDatabase()]);
   if(cameraResult.status==='fulfilled' && cameraResult.value) cameras = cameraResult.value.cameras || [];
@@ -572,6 +659,7 @@ async function init(){
   clampIsoToRange();
   clampCameraIsoToRange();
   setupTheme(); renderCameraSelect(); renderTopFocal(); renderGlobalCameraControls(); renderModules(); bindGlobal(); renderCustomize();
+  setupBosInstallExperience();
   setupAppUpdateSystem();
 }
 function setupTheme(){ document.documentElement.dataset.theme=state.theme; document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#0B0C0E':'#F3F1EC'; const btn=document.getElementById('themeBtn'); if(btn) btn.textContent=state.theme==='dark'?'LIGHT':'DARK'; }
