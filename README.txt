@@ -236,3 +236,10 @@ V59 — BOUTON INSTALLATION
 - Le bouton est masqué en mode PWA `standalone` et après une installation détectée.
 - Toutes les bulles restent fermées par défaut.
 - Version / cache / service worker incrémentés en V59.
+
+V60 — CTA SOUS L’ENTÊTE
+- Le CTA « Besoin d’un regard sur votre projet ? » est déplacé juste sous l’entête.
+- Le CTA n’apparaît plus en bas de page.
+- Traitement volontairement discret : texte simple, sans carte, avant le bouton d’installation.
+- Le bouton d’installation PWA reste présent sous le CTA quand pertinent.
+- Version / cache / service worker incrémentés en V60.

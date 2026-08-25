@@ -772,3 +772,19 @@ input[type="range"],
 .install-help strong{font-weight:800}
 .install-help p{margin:0}
 .install-help p+p{margin-top:8px}
+
+
+/* V60 — CTA projet remonté sous l’entête */
+.project-contact-top{
+  justify-content:flex-start;
+  padding:12px 0 6px;
+  margin:0 2px 2px;
+}
+.project-contact-top .project-contact-btn{
+  font-size:11px;
+}
+@media(max-width:520px){
+  .project-contact-top{
+    padding-top:10px;
+  }
+}
