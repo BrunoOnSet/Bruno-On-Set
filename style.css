@@ -800,3 +800,20 @@ input[type="range"],
 .project-contact-top .project-contact-btn{
   font-size:11px;
 }
+
+
+/* V62 — rapprocher le bouton d’installation de l’entête
+   et l’éloigner un peu du bouton Personnaliser */
+.install-app-row{
+  margin: 0 2px 2px !important;
+}
+header.bos-header{
+  margin-top: 0;
+}
+.project-contact-top{
+  padding: 10px 0 12px !important;
+  margin: 0 2px 10px !important;
+}
+.utility-row.bos-utility-row{
+  margin-top: 10px;
+}

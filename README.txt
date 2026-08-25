@@ -249,3 +249,8 @@ V61 — CTA PROXIMITÉ + INSTALLATION EN HAUT
 - Le bouton « INSTALLER L’APPLICATION → » est déplacé tout en haut, au-dessus de l’entête.
 - Le CTA projet reste sous l’entête, pour éviter d’avoir les deux éléments côte à côte.
 - Version / cache / service worker incrémentés en V61.
+
+V62 — AJUSTEMENT ESPACEMENTS HAUT DE PAGE
+- Le bouton « INSTALLER L’APPLICATION → » est remonté plus près de l’entête.
+- Le CTA projet est un peu plus espacé du bouton « Personnaliser ».
+- Version / cache / service worker incrémentés en V62.
