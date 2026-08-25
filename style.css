@@ -817,3 +817,16 @@ header.bos-header{
 .utility-row.bos-utility-row{
   margin-top: 10px;
 }
+
+
+/* V63 — resserrer encore le bloc du haut */
+.install-app-row{
+  margin:0 2px 0 !important;
+}
+.project-contact-top{
+  padding:5px 0 4px !important;
+  margin:0 2px 2px !important;
+}
+.utility-row.bos-utility-row{
+  margin-top:2px !important;
+}

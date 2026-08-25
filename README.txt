@@ -254,3 +254,9 @@ V62 — AJUSTEMENT ESPACEMENTS HAUT DE PAGE
 - Le bouton « INSTALLER L’APPLICATION → » est remonté plus près de l’entête.
 - Le CTA projet est un peu plus espacé du bouton « Personnaliser ».
 - Version / cache / service worker incrémentés en V62.
+
+V63 — ESPACEMENTS HAUT DE PAGE RESSERRÉS
+- « INSTALLER L’APPLICATION → » est encore rapproché de l’entête.
+- « Une question ? Un projet ? On en parle. → » est aussi rapproché de « Personnaliser ».
+- Le haut de page forme désormais un ensemble plus compact.
+- Version / cache / service worker incrémentés en V63.
