@@ -301,3 +301,7 @@ V68 — MEDIA COMPLET INTÉGRÉ
 - Le thème est partagé entre BOS et MEDIA.
 - Les valeurs condensées MEDIA du cockpit (débit, unité Mb/s / MB/s, carte) sont partagées avec MEDIA complet.
 - MEDIA intégré n’installe plus sa propre PWA ni son propre service worker : Bruno OnSet reste l’unique application installée.
+
+V69 — MEDIA fermé par défaut
+- Dans MEDIA complet, les bulles DÉBIT D'ENREGISTREMENT et CARTE MÉMOIRE / AUTONOMIE sont désormais fermées par défaut.
+- Le comportement est forcé au chargement / refresh pour éviter qu'elles se rouvrent automatiquement.

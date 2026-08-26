@@ -795,7 +795,10 @@
   updateCameraPresetSummary();
   renderPresets();
   switchMode('card');
-  document.querySelectorAll('.module[data-module]').forEach(moduleEl => syncModuleState(moduleEl));
+  document.querySelectorAll('.module[data-module]').forEach(moduleEl => {
+    moduleEl.classList.remove('open');
+    syncModuleState(moduleEl);
+  });
   updateAll();
   refreshSharedCameraDb();
 
@@ -807,6 +810,6 @@
 
   // One single PWA / service worker: the BOS root app.
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js?v=68', { updateViaCache: 'none' }).then(reg => reg.update()).catch(() => {}));
+    window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js?v=69', { updateViaCache: 'none' }).then(reg => reg.update()).catch(() => {}));
   }
 })();
