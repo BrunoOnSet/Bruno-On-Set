@@ -2386,7 +2386,7 @@ function init(){
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',()=>{
-      navigator.serviceWorker.register('../../sw.js?v=76',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+      navigator.serviceWorker.register('../../sw.js?v=77',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
     });
   }
 }

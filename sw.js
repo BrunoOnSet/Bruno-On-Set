@@ -1,14 +1,14 @@
-const APP_VERSION='V76';
-const CACHE='bos-bruno-onset-v76';
+const APP_VERSION='V77';
+const CACHE='bos-bruno-onset-v77';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=76',
-  'app.js?v=76',
-  'manifest.webmanifest?v=76',
+  'style.css?v=77',
+  'app.js?v=77',
+  'manifest.webmanifest?v=77',
   'version.json',
   'README.txt',
   'assets/logo-bos-header.jpg',
@@ -23,12 +23,12 @@ const CORE_ASSETS=[
   'modules/dof/index.html',
   'modules/dof/logo-bruno-guillard.png',
   'modules/dof/style.css?v=5.44-bos74',
-  'modules/frame/app.js?v=3.43-bos76',
+  'modules/frame/app.js?v=3.43-bos77',
   'modules/frame/assets/logo-bos-header.jpg',
   'modules/frame/assets/mannequin-preview.png',
   'modules/frame/index.html',
   'modules/frame/logo-bruno-guillard.png',
-  'modules/frame/styles.css?v=3.43-bos76',
+  'modules/frame/styles.css?v=3.43-bos77',
   'modules/light/app.js?v=0.62-bos71',
   'modules/light/assets/gels/lee017-spectrum.png',
   'modules/light/assets/gels/lee017-swatch-flat.png',

@@ -345,3 +345,10 @@ V75 — FRAME INTEGRATED
 V76 — FRAME CACHE FIX
 - Correction du chargement de script dans FRAME intégré.
 - Versionning des assets FRAME harmonisé pour éviter toute incohérence de cache.
+
+V77 — FRAME DA REFERENCE FIX
+- Header FRAME recopié strictement sur la référence DOF.
+- « Avec vous, sur chaque tournage. » : Montserrat 400, 11 px, noir #17191C, tracking 0.
+- Marge sous header ramenée à 2 px comme DOF.
+- Capsule « ← Retour à Bruno OnSet » : position, dimensions, fond, bordure, typo et couleur identiques à DOF.
+- Breakpoint mobile du header aligné sur DOF.

@@ -810,6 +810,6 @@
 
   // One single PWA / service worker: the BOS root app.
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    window.addEventListener('load', () => navigator.serviceWorker.register('../../sw.js?v=72', { updateViaCache: 'none' }).then(reg => reg.update()).catch(() => {}));
+    window.addEventListener('load', () => navigator.serviceWorker.register('../../sw.js?v=77', { updateViaCache: 'none' }).then(reg => reg.update()).catch(() => {}));
   }
 })();
