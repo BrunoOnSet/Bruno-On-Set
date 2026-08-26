@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" name="viewport"/>
+<meta content="#F3F1EC" id="themeColor" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="FRAME - BOS" name="apple-mobile-web-app-title"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="styles.css?v=3.43-bos76" rel="stylesheet"/>
+<title>BOS — Bruno OnSet · FRAME</title>
+</head>
+<body>
+<main class="app shell app-shell" id="app">
+<header class="topbar cardlike">
+<div class="top-inner bos-top-inner">
+<div class="top-title bos-top-title">
+<div aria-label="Bruno OnSet" class="bos-brand-lockup">
+<img alt="Logo Bruno OnSet" class="bos-header-logo" src="assets/logo-bos-header.jpg"/>
+<div class="bos-brand-text">
+<span class="bos-header-name">Bruno OnSet<span class="bos-header-app">- FRAME</span></span>
+<span class="bos-header-tagline">Avec vous, sur chaque tournage.</span>
+</div>
+</div>
+</div>
+<div class="top-actions bos-top-actions">
+<button aria-label="Changer de thème" class="mode-btn" id="themeBtn" type="button">DARK</button>
+</div>
+</div>
+</header>
+<section class="dof-bos-return-row" aria-label="Retour à Bruno OnSet">
+<a class="dof-bos-return-link" id="bosBackBtn" href="../../">← Retour à Bruno OnSet</a>
+</section>
+<div aria-label="Mode FRAME" class="mode-switch" role="group">
+<button class="mode-choice" id="realModeBtn" type="button">VUE RÉELLE</button>
+<button class="mode-choice active" id="previewModeBtn" type="button">PREVIEW</button>
+</div>
+<div class="utility-row" id="utilityRow">
+<button class="utility-link" id="cameraBtn" type="button">CAM</button>
+<button class="utility-link" id="calBtn" type="button">CAL</button>
+</div>
+<section class="modules frame-modules">
+<section class="panel method-panel collapsed controls-card camera-card first-card collapsible-card" id="frameCameraSettingsPanel">
+<div class="panel-head compact-head bos-card-head">
+<button aria-controls="frameCameraSettingsContent" aria-expanded="false" class="collapse-toggle card-heading collapsible-heading bos-card-heading" id="frameCameraSettingsToggle" type="button"><span class="step">01</span><span class="heading-copy"><span class="bos-heading-title">RÉGLAGES CAMÉRA</span><small class="bos-heading-subtitle camera-heading-subtitle" id="frameCameraSettingsSummary">FX6</small></span><span aria-hidden="true" class="chevron collapse-chevron">⌄</span></button>
+</div>
+<div class="method-content" hidden="" id="frameCameraSettingsContent">
+<div class="camera-row">
+<span class="method-label">Marque</span>
+<div class="chips mode-chips brand-chips" id="presetBrandMode"></div>
+<span class="method-label camera-model-label">Caméra</span>
+<div class="camera-select-wrap">
+<select aria-label="Choisir la caméra" class="camera-select" id="presetCameraSelect"></select>
+</div>
+<div class="camera-inline-sensor">
+<span>CAPTEUR UTILISÉ</span>
+<strong id="presetSensorInfo">—</strong>
+</div>
+</div>
+<div class="frame-camera-ratio-control">
+<button class="control-button" id="ratioBtn">
+<span>RATIO</span>
+<strong id="ratioText">16:9</strong>
+</button>
+</div>
+<div class="camera-guide-block">
+<label class="inline-toggle-row" for="inlineThirdsToggle">
+<span>GRILLE DES TIERS</span>
+<input id="inlineThirdsToggle" type="checkbox"/>
+</label>
+<div class="camera-guides-inline">
+<span class="method-label">FRAME GUIDE</span>
+<small class="frame-guide-subtitle">Pour visionner deux cadrages différents sur une même image</small>
+<div class="guide-choices inline-guide-choices" id="inlineGuideChoices"></div>
+</div>
+</div></div>
+</section>
+<section class="panel camera-panel bos-module-card controls-card collapsible-card" id="frameViewCard">
+<div class="panel-head compact-head bos-card-head"><div class="card-heading bos-card-heading frame-static-heading"><span class="step">02</span><span class="heading-copy"><span class="bos-heading-title" id="viewPanelKicker">PREVIEW</span><small class="bos-heading-subtitle">Cadrage</small></span><span aria-hidden="true" class="chevron frame-heading-spacer">⌄</span></div></div><div class="bos-linked-controls preview-primary-controls"><div class="bos-linked-slider bos-frame-distance-slider">
+<span>FOCALE</span>
+<input id="frameFocalSlider" max="200" min="9" step="1" type="range" value="35"/>
+<strong class="free-value-readout" data-free-control="focal" id="frameFocalReadout" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">35 mm</strong>
+</div><div class="bos-linked-slider bos-frame-distance-slider preview-only-control hidden" id="framePreviewDistanceRow">
+<span>RECUL</span>
+<input id="subjectDistanceSlider" max="15" min="0.40" step="0.05" type="range" value="3.00"/>
+<strong class="free-value-readout" id="subjectDistanceReadout" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">3,00 m</strong>
+</div><div class="bos-linked-slider bos-frame-distance-slider preview-only-control hidden" id="framePreviewCameraHeightRow">
+<span>HAUTEUR CAMÉRA</span>
+<input id="cameraHeightSlider" max="2.50" min="0.50" step="0.01" type="range" value="1.55"/>
+<strong class="free-value-readout" id="cameraHeightReadout" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">1,55 m</strong>
+</div></div>
+<div class="camera-stage" id="cameraStage">
+<video autoplay="" id="video" muted="" playsinline=""></video>
+<div aria-hidden="true" class="preview-scene hidden" id="previewScene">
+<div class="preview-wall"></div>
+<div class="preview-floor"></div>
+<div aria-hidden="true" class="preview-eye-guide" id="previewEyeGuide">
+<span>LIGNE DES YEUX · 1/3</span>
+</div>
+<div class="preview-subject" id="previewSubject">
+<img alt="Mannequin androgynous de cadrage" class="preview-person" src="assets/mannequin-preview.png"/>
+</div>
+<div aria-label="Sujet 2" class="preview-subject preview-subject-2 hidden" id="previewSubject2">
+<img alt="" aria-hidden="true" class="preview-person" src="assets/mannequin-preview.png"/>
+</div>
+<div aria-label="Sujet 3" class="preview-subject preview-subject-3 hidden" id="previewSubject3">
+<img alt="" aria-hidden="true" class="preview-person" src="assets/mannequin-preview.png"/>
+</div>
+<div aria-label="Sujet 4" class="preview-subject preview-subject-4 hidden" id="previewSubject4">
+<img alt="" aria-hidden="true" class="preview-person" src="assets/mannequin-preview.png"/>
+</div>
+<div class="preview-measure" id="previewMeasure">
+<span class="preview-measure-line"></span>
+<strong id="previewMeasureText">1,75 m</strong>
+</div>
+<div class="preview-info-overlay">
+<strong id="previewPlanOverlay">PLAN PIED</strong>
+<span id="previewMetricsOverlay">—</span>
+</div>
+</div>
+<div class="camera-placeholder" id="cameraPlaceholder">
+<div class="reticle-big"></div>
+<strong>FRAME</strong>
+<span>Director's Viewfinder</span>
+<button class="primary" id="startCameraBtn">OUVRIR LA CAMÉRA</button>
+</div>
+<div class="sim-warning hidden" id="simWarning"></div>
+<div class="frame-mask" id="frameMask">
+<div class="main-frame" id="mainFrame">
+<div class="corner tl"></div><div class="corner tr"></div>
+<div class="corner bl"></div><div class="corner br"></div>
+<div class="thirds hidden" id="thirds">
+<i class="v v1"></i><i class="v v2"></i><i class="h h1"></i><i class="h h2"></i>
+</div>
+<div id="guideLayer"></div>
+</div>
+</div>
+<div class="readout">
+<div>
+<span class="label">CAMÉRA</span>
+<strong id="cameraReadout">FX6</strong>
+</div>
+<div>
+<span class="label">FOCALE</span>
+<strong id="focalReadout">35 mm</strong>
+</div>
+<div>
+<span class="label">FORMAT</span>
+<strong id="ratioReadout">16:9</strong>
+</div>
+<div>
+<span class="label">HFOV</span>
+<strong id="hfovReadout">43.6°</strong>
+</div>
+</div>
+</div>
+<div class="frame-controls-inline">
+<div class="preview-controls hidden" id="previewControls">
+<div class="preview-subject-count-block">
+<div class="preview-target-head">
+<span>NOMBRE DE PERSONNES</span>
+<small>Mini groupe simple · la caméra se centre automatiquement sur le groupe.</small>
+</div>
+<div class="subject-count-switch" id="subjectCountSwitch">
+<button class="active" data-count="1" type="button">1</button>
+<button data-count="2" type="button">2</button>
+<button data-count="3" type="button">3</button>
+<button data-count="4" type="button">4</button>
+</div>
+</div>
+<div class="bos-linked-controls preview-linked-controls">
+<div class="bos-linked-slider preview-setting-row">
+<span>TAILLE PERSONNE 1</span>
+<input id="subjectHeightSlider" max="2.20" min="1.20" step="0.01" type="range" value="1.75"/>
+<strong class="free-value-readout" id="subjectHeightReadout" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">1,75 m</strong>
+</div>
+<div class="extra-subject-controls" id="extraSubjectControls"></div>
+<div class="bos-linked-slider preview-setting-row group-spacing-row">
+<span>ÉCARTEMENT DU GROUPE</span>
+<input id="groupSpreadSlider" max="2.50" min="0.20" step="0.05" type="range" value="0.80"/>
+<strong class="free-value-readout" id="groupSpreadReadout" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">0,80 m</strong>
+</div>
+</div>
+<div class="preview-result-card">
+<div>
+<span>CADRE APPROX.</span>
+<strong id="previewPlanResult">—</strong>
+</div>
+<div>
+<span>CHAMP AU CENTRE DU GROUPE</span>
+<strong id="previewFrameSizeResult">—</strong>
+</div>
+</div>
+<input id="subjectHeightInput" type="hidden" value="1.75"/>
+<input id="subjectDistanceInput" type="hidden" value="3.00"/>
+<input id="cameraHeightInput" type="hidden" value="1.55"/>
+<div class="hidden" id="apertureChips"></div>
+<div class="hidden" id="focusQuickButtons"></div>
+<div class="hidden" id="dofRecommendation"></div>
+<button class="hidden" id="applyDofRecommendationBtn" type="button">APPLIQUER</button>
+</div>
+</div>
+</section>
+</section>
+<section aria-label="Contact professionnel" class="project-contact">
+<button class="project-contact-btn" id="projectContactBtn" type="button">
+        Besoin d’un regard sur votre projet ? <span aria-hidden="true">→</span>
+</button>
+</section>
+<footer>
+<div class="signature">
+<a class="footer-brand-link" href="https://www.brunoguillard.com/" rel="noopener noreferrer" target="_blank">
+<img alt="" class="footer-logo" src="logo-bruno-guillard.png"/>
+<span>BOS · Bruno OnSet · Bruno Guillard</span>
+</a>
+<span class="app-version">v3.43</span>
+</div>
+</footer>
+</main>
+<dialog class="sheet project-sheet" id="projectDialog">
+<form class="sheet-inner project-sheet-inner" method="dialog">
+<div class="project-sheet-head">
+<div>
+<span class="project-kicker">BRUNO ONSET</span>
+</div>
+<button aria-label="Fermer" class="project-close" value="close">×</button>
+</div>
+<div class="project-profile">
+<strong>Bruno Guillard</strong>
+<span>Réalisateur · Directeur de la photographie · Consultant image</span>
+</div>
+<div aria-label="Prestations" class="project-services">
+<span>Réalisation</span>
+<span>Direction de la photographie</span>
+<span>Conseil / préparation image</span>
+</div>
+<p class="project-note">
+        Échangeons autour de votre projet, de sa mise en scène, de ses intentions d’image et de son dispositif de tournage.
+      </p>
+<div class="project-actions">
+<a class="project-email-btn" href="mailto:brunoguillardcontact@gmail.com?subject=Projet%20de%20tournage%20%E2%80%94%20Bruno%20OnSet&amp;body=Bonjour%20Bruno%2C%0A%0AJe%20vous%20contacte%20depuis%20Bruno%20OnSet.%0A%0A">Écrire à Bruno <span aria-hidden="true">→</span></a>
+<div class="project-secondary-links">
+<a class="project-secondary-link" href="https://wa.me/33679979111?text=Bonjour%20Bruno%2C%0A%0AJe%20vous%20contacte%20depuis%20Bruno%20OnSet.%0A%0A" rel="noopener noreferrer" target="_blank">WhatsApp</a>
+<span aria-hidden="true">·</span>
+<a class="project-secondary-link" href="https://brunoguillard.com" rel="noopener noreferrer" target="_blank">BrunoGuillard.com</a>
+</div>
+</div>
+</form>
+</dialog>
+<dialog class="sheet" id="cameraDialog">
+<form method="dialog">
+<header><h2>Caméra téléphone</h2><button class="close" value="cancel">×</button></header>
+<p class="muted">FRAME mémorise une calibration séparée pour chaque caméra et orientation.</p>
+<select id="deviceSelect"></select>
+<button class="primary full" id="restartCameraBtn" type="button">UTILISER CETTE CAMÉRA</button>
+<div class="info-card">
+<span>Calibration</span>
+<strong id="calStatus">Non calibrée</strong>
+<small id="calDetails">Calibre cette caméra pour simuler les focales.</small>
+</div>
+<button class="secondary full" id="openCalFromCamera" type="button">CALIBRER</button>
+</form>
+</dialog>
+<dialog class="sheet" id="calChooserDialog">
+<form method="dialog">
+<header><h2>Calibration</h2><button class="close" value="cancel">×</button></header>
+<p class="muted">Deux méthodes. CAL PRO est recommandée si tu as une vraie caméra sous la main.</p>
+<div class="cal-mode-grid">
+<button class="cal-mode-card" id="openQuickCalBtn" type="button">
+<span class="cal-mode-tag">RAPIDE</span>
+<strong>Objet + distance</strong>
+<small>Calcule le champ du téléphone à partir d'une mesure physique.</small>
+</button>
+<button class="cal-mode-card recommended" id="openProCalBtn" type="button">
+<span class="cal-mode-tag">RECOMMANDÉ</span>
+<strong>CAL PRO</strong>
+<small>Apprend directement le cadre d'une vraie caméra à plusieurs focales.</small>
+</button>
+</div>
+<div class="info-card">
+<span>Profil actuel</span>
+<strong id="chooserCalStatus">Non calibré</strong>
+<small id="chooserCalDetails">Aucun point enregistré.</small>
+</div>
+<div class="cal-reset-card">
+<div>
+<span>REPARTIR DE ZÉRO</span>
+<strong id="resetOrientationLabel">Calibration actuelle</strong>
+<small>Efface uniquement le profil de l’orientation en cours. L’autre orientation reste intacte.</small>
+</div>
+<button class="danger full" id="resetCurrentCalibrationBtn" type="button">RESET CALIBRATION</button>
+</div>
+</form>
+</dialog>
+<dialog class="sheet calibration-sheet" id="calDialog">
+<form method="dialog">
+<header><h2>CAL RAPIDE</h2><button class="close" value="cancel">×</button></header>
+<p class="muted">Place un objet de largeur connue au centre du cadre, mesure sa distance au téléphone, puis aligne les deux repères sur ses bords.</p>
+<div class="cal-fields">
+<label>Largeur objet
+          <div><input id="objectWidth" min="1" step="1" type="number" value="80"/><span>cm</span></div>
+</label>
+<label>Distance
+          <div><input id="objectDistance" min="0.1" step="0.1" type="number" value="2"/><span>m</span></div>
+</label>
+</div>
+<div class="cal-preview" id="calPreview">
+<video autoplay="" id="calVideo" muted="" playsinline=""></video>
+<div class="cal-center"></div>
+<div class="cal-line left" id="calLeft"><span></span></div>
+<div class="cal-line right" id="calRight"><span></span></div>
+</div>
+<div class="cal-result">
+<span>Champ horizontal calculé</span>
+<strong id="calFov">—</strong>
+</div>
+<button class="primary full" id="saveCalibrationBtn" type="button">ENREGISTRER LA CALIBRATION</button>
+<small class="footnote">Astuce : fais la calibration à environ 2–3 m avec un objet assez large et bien parallèle au téléphone.</small>
+</form>
+</dialog>
+<dialog class="pro-dialog" id="proCalDialog">
+<div class="pro-stage" id="proStage">
+<video autoplay="" id="proVideo" muted="" playsinline=""></video>
+<div class="pro-top glass">
+<div>
+<span class="pro-kicker">FRAME · CAL PRO</span>
+<strong id="proTopReference">Sony FX6 · 24 mm</strong>
+</div>
+<button class="close" id="closeProCalBtn" type="button">×</button>
+</div>
+<div class="pro-frame" id="proFrame">
+<div class="corner tl"></div><div class="corner tr"></div>
+<div class="corner bl"></div><div class="corner br"></div>
+<span id="proFrameLabel">16:9</span>
+</div>
+<div class="pro-instructions glass">
+<strong>Fais coïncider ce cadre avec la vraie caméra</strong>
+<span>Place le téléphone au plus près de l'axe optique, puis règle le zoom ci-dessous.</span>
+</div>
+<div class="pro-controls glass compact" id="proControls">
+<div class="pro-compact-head">
+<div>
+<span class="control-label">FOCALE</span>
+<strong id="proCompactRef">Sony FX6 · 24 mm</strong>
+</div>
+<button class="pro-advanced-toggle" id="toggleProAdvancedBtn" type="button">RÉGLAGES</button>
+</div>
+<div class="pro-lens-strip" id="proLensStrip"></div>
+<div class="pro-zoom-head">
+<span>ZOOM FRAME</span>
+<strong id="proScaleReadout">1.000×</strong>
+</div>
+<div class="pro-slider-row">
+<button class="fine-btn" id="proMinusBtn" type="button">−</button>
+<input id="proScaleSlider" max="8" min="0.35" step="0.002" type="range" value="1"/>
+<button class="fine-btn" id="proPlusBtn" type="button">+</button>
+</div>
+<div class="pro-wide-warning hidden" id="proWideWarning">
+          LIMITE GRAND-ANGLE · si le cadre reste trop serré, sélectionne la caméra ultra-grand-angle du téléphone via CAM.
+        </div>
+<div class="pro-advanced-panel hidden" id="proAdvancedPanel">
+<div class="pro-reference-row">
+<label>
+<span>CAMÉRA DE RÉFÉRENCE</span>
+<select id="proPresetSelect"></select>
+</label>
+<div class="pro-ref-info">
+<span>HFOV</span>
+<strong id="proTargetFov">—</strong>
+</div>
+</div>
+<div class="pro-limit-card">
+<div>
+<span>LIMITE GRAND-ANGLE</span>
+<strong id="proLimitStatus">Aucune limite définie</strong>
+<small id="proLimitDetails">Définis la focale la plus large que le téléphone arrive réellement à reproduire.</small>
+</div>
+<div class="pro-limit-actions">
+<button class="secondary" id="setWideLimitBtn" type="button">UTILISER CETTE FOCALE COMME LIMITE</button>
+<button class="secondary subtle hidden" id="clearWideLimitBtn" type="button">EFFACER</button>
+</div>
+</div>
+<div class="pro-center-block">
+<div class="pro-zoom-head">
+<span>CENTRAGE HORIZONTAL</span>
+<strong id="proOffsetXReadout">0</strong>
+</div>
+<input class="center-slider" id="proOffsetXSlider" max="0.35" min="-0.35" step="0.002" type="range" value="0"/>
+<div class="pro-zoom-head compact">
+<span>CENTRAGE VERTICAL</span>
+<strong id="proOffsetYReadout">0</strong>
+</div>
+<input class="center-slider" id="proOffsetYSlider" max="0.35" min="-0.35" step="0.002" type="range" value="0"/>
+<button class="center-reset" id="resetProCenterBtn" type="button">RECENTRER</button>
+</div>
+<div class="pro-points-head">
+<span>POINTS ENREGISTRÉS</span>
+<small>2 minimum · 24 / 35 / 50 / 85 conseillés</small>
+</div>
+<div class="pro-points-list" id="proPointsList"></div>
+</div>
+<div class="pro-actions-row">
+<button class="secondary pro-hide-btn" id="hideProControlsBtn" type="button">MASQUER</button>
+<button class="primary pro-save-btn" id="saveProPointBtn" type="button">ENREGISTRER CE POINT</button>
+</div>
+</div>
+<button class="pro-show-controls glass hidden" id="showProControlsBtn" type="button">AFFICHER LES CONTRÔLES</button>
+</div>
+</dialog>
+<dialog class="sheet" id="ratioDialog">
+<form method="dialog">
+<header><h2>Ratio</h2><button class="close" value="cancel">×</button></header>
+<div class="choice-grid" id="ratioList"></div>
+</form>
+</dialog>
+<dialog class="sheet" id="settingsDialog">
+<form method="dialog">
+<header><h2>Affichage</h2><button class="close" value="cancel">×</button></header>
+<label class="toggle-row"><span>Grille des tiers</span><input id="thirdsToggle" type="checkbox"/></label>
+<hr/>
+<h3>Frame guides</h3>
+<p class="muted">Superpose les formats de livraison dans ton cadre principal.</p>
+<div class="guide-choices" id="guideChoices"></div>
+<hr/>
+<button class="danger full" id="resetCalBtn" type="button">RESET CALIBRATION · ORIENTATION ACTUELLE</button>
+</form>
+</dialog>
+<script src="app.js?v=3.43-bos76"></script>
+</body>
+</html>

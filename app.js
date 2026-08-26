@@ -1,7 +1,7 @@
-const APP_VERSION = 'V74';
-const APP_BUILD = 74;
-const STORAGE_KEY = 'bos-cockpit-v74';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v73','bos-cockpit-v72','bos-cockpit-v71','bos-cockpit-v70','bos-cockpit-v69','bos-cockpit-v68','bos-cockpit-v67','bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V76';
+const APP_BUILD = 76;
+const STORAGE_KEY = 'bos-cockpit-v76';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v75','bos-cockpit-v74','bos-cockpit-v73','bos-cockpit-v72','bos-cockpit-v71','bos-cockpit-v70','bos-cockpit-v69','bos-cockpit-v68','bos-cockpit-v67','bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -67,7 +67,7 @@ const moduleMeta = {
   plan: ['PLAN', 'Plans de feu'],
   expo: ['EXPO', "Dynamique de l'image"]
 };
-const APP_LINKS = { frame: '#', dof: 'modules/dof/', light: 'modules/light/', media: 'modules/media/', plan: '#', expo: '#' };
+const APP_LINKS = { frame: 'modules/frame/', dof: 'modules/dof/', light: 'modules/light/', media: 'modules/media/', plan: '#', expo: '#' };
 
 let cameras = [];
 let cameraDatabaseSource = 'none';
@@ -91,6 +91,8 @@ function mergeBosSharedInto(target){
   if(Number.isFinite(Number(shared.aperture))) target.aperture=Number(shared.aperture);
   if(Number.isFinite(Number(shared.distanceCm))) target.distanceCm=Number(shared.distanceCm);
   if(shared.theme==='light' || shared.theme==='dark') target.theme=shared.theme;
+  if(Number.isFinite(Number(shared.ratio))) target.ratio=Number(shared.ratio);
+  if(Number.isFinite(Number(shared.frameCameraHeightM))) target.frameCameraHeightM=Math.max(0.5,Math.min(2.5,Number(shared.frameCameraHeightM)));
   if(shared.cameraIso!==undefined && String(shared.cameraIso).trim()) target.cameraIso=String(shared.cameraIso);
   if(shared.cameraShutter!==undefined && String(shared.cameraShutter).trim()) target.cameraShutter=String(shared.cameraShutter);
   if(shared.light && typeof shared.light==='object'){
@@ -116,6 +118,8 @@ function writeBosSharedState(source='cockpit'){
       cameraGamma:state.cameraGamma,
       cameraIso:state.cameraIso,
       cameraShutter:state.cameraShutter,
+      ratio:Number(state.ratio),
+      frameCameraHeightM:Number(state.frameCameraHeightM),
       light:{
         fixture: state.light?.fixture || ''
       },
@@ -595,7 +599,7 @@ async function checkForBosUpdate(force=false){
 async function setupAppUpdateSystem(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('sw.js?v=74', {updateViaCache:'none'});
+    const reg = await navigator.serviceWorker.register('sw.js?v=76', {updateViaCache:'none'});
 
     if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
 
@@ -1108,7 +1112,7 @@ function bindGlobal(){
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
 function renderModule(id){
   const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub;
-  const fullTool=(id==='dof' || id==='media' || id==='light')
+  const fullTool=(id==='dof' || id==='media' || id==='light' || id==='frame')
     ? `<button type="button" class="module-full-link" data-applink="${id}">OUVRIR L’OUTIL COMPLET <span aria-hidden="true">→</span></button>`
     : '';
   return `<article class="module ${state.open[id]?'open':''}" data-module="${id}">

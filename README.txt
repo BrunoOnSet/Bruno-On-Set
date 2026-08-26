@@ -334,3 +334,14 @@ V74 — WIDTH REFERENCE FIX
 - DOF est maintenant verrouillé à la même largeur canonique 620 px que le cockpit et MEDIA.
 - LIGHT est verrouillé sur la même largeur pour éviter toute régression.
 - Les query strings CSS ont été changées pour forcer le navigateur à charger les nouvelles règles.
+
+V75 — FRAME INTEGRATED
+- Intégration de FRAME comme sous-module complet BOS.
+- Bouton « OUVRIR L’OUTIL COMPLET » ajouté sur la bulle FRAME du cockpit.
+- Retour « ← Retour à Bruno OnSet » ajouté sous l’entête dans FRAME.
+- Synchronisation BOS en temps réel : caméra, focale, recul, ratio, hauteur caméra, thème.
+- FRAME aligné sur la DA commune des sous-applications BOS.
+
+V76 — FRAME CACHE FIX
+- Correction du chargement de script dans FRAME intégré.
+- Versionning des assets FRAME harmonisé pour éviter toute incohérence de cache.
