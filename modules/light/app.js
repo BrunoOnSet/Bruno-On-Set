@@ -721,7 +721,7 @@ window.addEventListener('pageshow',()=>{
 
 if('serviceWorker' in navigator && location.protocol!=='file:'){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('../../sw.js?v=73',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('../../sw.js?v=74',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
   });
 }
 

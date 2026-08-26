@@ -1529,3 +1529,18 @@ body.dark .dof-bos-return-link:hover,
 body.dark .dof-bos-return-link:focus-visible{
   border-color:#7FA7B0;
 }
+
+
+/* BOS V74 — largeur canonique identique Cockpit / MEDIA */
+.app-shell{
+  width:min(620px,100%) !important;
+  max-width:620px !important;
+  margin:0 auto !important;
+  padding:calc(22px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)) !important;
+}
+@media(max-width:520px){
+  .app-shell{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+}

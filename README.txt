@@ -328,3 +328,9 @@ V73 — LIGHT retour + largeur alignés
 - Retour LIGHT remis exactement aux proportions du bouton de retour DOF.
 - Largeur externe de LIGHT alignée sur MEDIA.
 - Conteneur DOF rendu strictement identique à MEDIA sur desktop pour éviter les écarts visuels.
+
+V74 — WIDTH REFERENCE FIX
+- Correction de la vraie règle CSS finale qui forçait encore DOF à 760 px malgré la correction précédente.
+- DOF est maintenant verrouillé à la même largeur canonique 620 px que le cockpit et MEDIA.
+- LIGHT est verrouillé sur la même largeur pour éviter toute régression.
+- Les query strings CSS ont été changées pour forcer le navigateur à charger les nouvelles règles.
