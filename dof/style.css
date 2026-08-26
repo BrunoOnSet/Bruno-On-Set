@@ -2246,3 +2246,48 @@ body.dark .install-app-btn{color:#7FA7B0}
     padding-bottom:8px;
   }
 }
+
+
+/* BOS intégré V67 — retour BOS en capsule plus visible */
+.dof-bos-return-row{
+  display:flex;
+  justify-content:flex-start;
+  padding:8px 0 10px;
+  margin:0 2px 10px;
+}
+.dof-bos-return-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 14px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel2);
+  color:#2F5B66;
+  box-shadow:0 1px 0 rgba(0,0,0,.03);
+  font-family:"Montserrat",Arial,sans-serif;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:700;
+  letter-spacing:.01em;
+  text-decoration:none;
+}
+.dof-bos-return-link:hover,
+.dof-bos-return-link:focus-visible{
+  border-color:#2F5B66;
+  text-decoration:none;
+}
+.dof-bos-return-link:focus-visible{
+  outline:2px solid #2F5B66;
+  outline-offset:3px;
+}
+:root[data-theme="dark"] .dof-bos-return-link{
+  color:#7FA7B0;
+  border-color:rgba(127,167,176,.35);
+  background:rgba(255,255,255,.03);
+}
+:root[data-theme="dark"] .dof-bos-return-link:hover,
+:root[data-theme="dark"] .dof-bos-return-link:focus-visible{
+  border-color:#7FA7B0;
+}

@@ -286,3 +286,9 @@ V66 — RETOUR BOS DANS DOF
 - Il est déplacé sous l’entête, à la place du CTA haut, pour être plus visible et plus logique.
 - Le thème reste à droite dans l’entête.
 - Versions / cache / service worker incrémentés en V66.
+
+V67 — RETOUR BOS PLUS VISIBLE DANS DOF
+- Le retour sous l’entête dans DOF devient une capsule plus visible.
+- Le libellé devient : « ← Retour à Bruno OnSet ».
+- Position inchangée : sous l’entête, à la place du CTA haut.
+- Versions / cache / service worker incrémentés en V67.
