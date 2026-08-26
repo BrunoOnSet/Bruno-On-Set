@@ -305,3 +305,15 @@ V68 — MEDIA COMPLET INTÉGRÉ
 V69 — MEDIA fermé par défaut
 - Dans MEDIA complet, les bulles DÉBIT D'ENREGISTREMENT et CARTE MÉMOIRE / AUTONOMIE sont désormais fermées par défaut.
 - Le comportement est forcé au chargement / refresh pour éviter qu'elles se rouvrent automatiquement.
+
+V70 — LIGHT intégré
+- Intégration complète du module LIGHT dans Bruno OnSet.
+- Nouveau lien « OUVRIR L’OUTIL COMPLET » sur la bulle LIGHT.
+- LIGHT complet dispose du bouton « ← Retour à Bruno OnSet » sous l’entête, comme DOF et MEDIA.
+- Synchronisation BOS ajoutée pour le thème, le recul, l’ouverture, l’ISO, le shutter et le projecteur sélectionné.
+
+V71 — CLEAN STRUCTURE
+- Nettoyage structurel de la version intégrée pour un dépôt GitHub plus propre.
+- Dans /light, suppression des reliquats d’application autonome : manifest, icon.svg, README internes, copie locale de lights.json, logo d’icône standalone.
+- /light utilise désormais la base commune centralisée ../data/lights.json comme secours local.
+- Aucun changement voulu sur l’interface ou le fonctionnement côté utilisateur.

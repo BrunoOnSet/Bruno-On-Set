@@ -1,14 +1,14 @@
-const APP_VERSION='V69';
-const CACHE='bos-bruno-onset-v69';
+const APP_VERSION='V71';
+const CACHE='bos-bruno-onset-v71';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=69',
-  'app.js?v=69',
-  'manifest.webmanifest?v=69',
+  'style.css?v=71',
+  'app.js?v=71',
+  'manifest.webmanifest?v=71',
   'version.json',
   'data/cameras.json',
   'data/lights.json',
@@ -25,7 +25,37 @@ const CORE_ASSETS=[
   'media/style.css?v=2.15-bos69',
   'media/app.js?v=2.15-bos69',
   'media/assets/logo-bos-header.jpg',
-  'media/logo-bruno-guillard.png'
+  'media/logo-bruno-guillard.png',
+  'light/README.txt',
+  'light/README_PROJECTEURS_DB.md',
+  'light/app.js?v=0.62-bos70',
+  'light/assets/gels/lee017-spectrum.png',
+  'light/assets/gels/lee017-swatch-flat.png',
+  'light/assets/gels/lee017-swatch.png',
+  'light/assets/gels/lee117-swatch-flat.png',
+  'light/assets/gels/lee201-swatch-flat.png',
+  'light/assets/gels/lee202-swatch-flat.png',
+  'light/assets/gels/lee203-swatch-flat.png',
+  'light/assets/gels/lee204-swatch-flat.png',
+  'light/assets/gels/lee205-swatch-flat.png',
+  'light/assets/gels/lee206-swatch-flat.png',
+  'light/assets/gels/lee213-swatch-flat.png',
+  'light/assets/gels/lee245-swatch-flat.png',
+  'light/assets/gels/lee246-swatch-flat.png',
+  'light/assets/gels/lee248-swatch-flat.png',
+  'light/assets/gels/lee249-swatch-flat.png',
+  'light/assets/gels/lee506-swatch-flat.png',
+  'light/assets/gels/lee603-swatch-flat.png',
+  'light/assets/gels/lee728-swatch-flat.png',
+  'light/assets/logo-bos-header.jpg',
+  'light/assets/logo-light-app.png',
+  'light/assets/logo-light-header.png',
+  'light/bos-projecteurs-db.js',
+  'light/icon.svg',
+  'light/index.html',
+  'light/lights.json',
+  'light/manifest.webmanifest',
+  'light/styles.css?v=0.62-bos71',
 ];
 
 async function freshResponse(url){
@@ -94,7 +124,8 @@ self.addEventListener('fetch',event=>{
       const cache=await caches.open(CACHE);
       const isDofRoute=/\/dof(?:\/|$)/i.test(url.pathname);
       const isMediaRoute=/\/media(?:\/|$)/i.test(url.pathname);
-      const fallbackKey=isDofRoute ? 'dof/index.html' : (isMediaRoute ? 'media/index.html' : 'index.html');
+      const isLightRoute=/\/light(?:\/|$)/i.test(url.pathname);
+      const fallbackKey=isDofRoute ? 'dof/index.html' : (isMediaRoute ? 'media/index.html' : (isLightRoute ? 'light/index.html' : 'index.html'));
       try{
         const fresh=await fetch(event.request,{cache:'no-store'});
         if(fresh?.ok) await cache.put(fallbackKey,fresh.clone());
