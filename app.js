@@ -1,7 +1,7 @@
-const APP_VERSION = 'V67';
-const APP_BUILD = 67;
-const STORAGE_KEY = 'bos-cockpit-v67';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V68';
+const APP_BUILD = 68;
+const STORAGE_KEY = 'bos-cockpit-v68';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v67','bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -67,7 +67,7 @@ const moduleMeta = {
   plan: ['PLAN', 'Plans de feu'],
   expo: ['EXPO', "Dynamique de l'image"]
 };
-const APP_LINKS = { frame: '#', dof: 'dof/', light: '#', media: '#', plan: '#', expo: '#' };
+const APP_LINKS = { frame: '#', dof: 'dof/', light: '#', media: 'media/', plan: '#', expo: '#' };
 
 let cameras = [];
 let cameraDatabaseSource = 'none';
@@ -91,6 +91,11 @@ function mergeBosSharedInto(target){
   if(Number.isFinite(Number(shared.aperture))) target.aperture=Number(shared.aperture);
   if(Number.isFinite(Number(shared.distanceCm))) target.distanceCm=Number(shared.distanceCm);
   if(shared.theme==='light' || shared.theme==='dark') target.theme=shared.theme;
+  if(shared.media && typeof shared.media==='object'){
+    if(Number.isFinite(Number(shared.media.bitrate))) target.media.bitrate = Number(shared.media.bitrate);
+    if(shared.media.unit==='Mb/s' || shared.media.unit==='MB/s') target.media.unit = shared.media.unit;
+    if(Number.isFinite(Number(shared.media.card))) target.media.card = Number(shared.media.card);
+  }
   return target;
 }
 function writeBosSharedState(source='cockpit'){
@@ -106,6 +111,11 @@ function writeBosSharedState(source='cockpit'){
       cameraGamma:state.cameraGamma,
       cameraIso:state.cameraIso,
       cameraShutter:state.cameraShutter,
+      media:{
+        bitrate:Number(state.media.bitrate),
+        unit:state.media.unit,
+        card:Number(state.media.card)
+      },
       updatedAt:Date.now(),
       source
     };
@@ -577,7 +587,7 @@ async function checkForBosUpdate(force=false){
 async function setupAppUpdateSystem(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('sw.js?v=67', {updateViaCache:'none'});
+    const reg = await navigator.serviceWorker.register('sw.js?v=68', {updateViaCache:'none'});
 
     if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
 
@@ -697,13 +707,15 @@ function setupBosInstallExperience(){
 function syncCockpitFromSharedState(){
   const before=JSON.stringify({
     cameraId:state.cameraId,focal:state.focal,aperture:state.aperture,
-    distanceCm:state.distanceCm,theme:state.theme
+    distanceCm:state.distanceCm,theme:state.theme,
+    mediaBitrate:state.media?.bitrate,mediaUnit:state.media?.unit,mediaCard:state.media?.card
   });
   mergeBosSharedInto(state);
   normalizeState();
   const after=JSON.stringify({
     cameraId:state.cameraId,focal:state.focal,aperture:state.aperture,
-    distanceCm:state.distanceCm,theme:state.theme
+    distanceCm:state.distanceCm,theme:state.theme,
+    mediaBitrate:state.media?.bitrate,mediaUnit:state.media?.unit,mediaCard:state.media?.card
   });
   if(before===after) return false;
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(_){}
@@ -1086,8 +1098,8 @@ function bindGlobal(){
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
 function renderModule(id){
   const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub;
-  const fullTool=id==='dof'
-    ? `<button type="button" class="module-full-link" data-applink="dof">OUVRIR L’OUTIL COMPLET <span aria-hidden="true">→</span></button>`
+  const fullTool=(id==='dof' || id==='media')
+    ? `<button type="button" class="module-full-link" data-applink="${id}">OUVRIR L’OUTIL COMPLET <span aria-hidden="true">→</span></button>`
     : '';
   return `<article class="module ${state.open[id]?'open':''}" data-module="${id}">
     <div class="module-head-row">
@@ -1105,7 +1117,7 @@ function renderBody(id){
   if(id==='plan') return renderPlanBody();
   if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="dofFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${nearestApertureIndex(state.aperture)}"><strong id="dofApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${apertureReadoutText(state.aperture)}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="dofDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div></div>`;
 
-  if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
+  if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>`;
 
   if(id==='frame') return `<div class="bos-frame-card"><div class="bos-frame-card-head"><strong>PREVIEW</strong><span>SIMULATION · BOS</span></div><div class="bos-frame-stage" id="frameStage"><div class="bos-frame-window" id="frameWindow"><div class="bos-frame-corner tl"></div><div class="bos-frame-corner tr"></div><div class="bos-frame-corner bl"></div><div class="bos-frame-corner br"></div><div class="bos-frame-eye-line"><span>LIGNE DES YEUX · 1/3</span></div><div class="bos-frame-subject" id="frameSubject">${frameFigureMarkup()}<span class="bos-frame-person-badge">P1</span></div><div class="bos-frame-measure" id="frameMeasure"><strong>1,80 m</strong></div><div class="bos-frame-plan" id="framePlan"></div></div></div><div class="bos-frame-distance-slider bos-frame-focal-slider"><span>FOCALE</span><input id="frameFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="frameFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-frame-distance-slider"><span>RECUL</span><input id="frameDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="frameDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div><div class="bos-frame-distance-slider bos-frame-height-slider"><span>HAUTEUR CAMÉRA</span><input id="frameCameraHeightSlider" type="range" min="0.50" max="2.50" step="0.05" value="${Number(state.frameCameraHeightM||1.55).toFixed(2)}"><strong id="frameCameraHeightReadout" class="free-value-readout" data-free-control="cameraHeight" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${heightReadoutText(state.frameCameraHeightM)}</strong></div><div class="bos-frame-ratio-control"><span>RATIO</span><button type="button" class="ratio-select-btn" id="ratioBtn"><strong id="ratioText">${ratioLabel(state.ratio)}</strong><span>⌄</span></button></div><div class="bos-frame-foot" id="frameFoot">Sujet unique · 1,80 m</div></div>${appLink(id)}`;
 

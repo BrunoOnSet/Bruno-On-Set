@@ -292,3 +292,12 @@ V67 — RETOUR BOS PLUS VISIBLE DANS DOF
 - Le libellé devient : « ← Retour à Bruno OnSet ».
 - Position inchangée : sous l’entête, à la place du CTA haut.
 - Versions / cache / service worker incrémentés en V67.
+
+V68 — MEDIA COMPLET INTÉGRÉ
+- MEDIA V2.15 est intégré dans la même PWA BOS sous /media/.
+- Dans la bulle MEDIA du cockpit, « OUVRIR L’OUTIL COMPLET → » apparaît dans l’en-tête de la bulle.
+- Dans MEDIA complet, une capsule « ← Retour à Bruno OnSet » est placée sous l’entête, comme pour DOF.
+- Le retour vers BOS conserve la logique de position du cockpit.
+- Le thème est partagé entre BOS et MEDIA.
+- Les valeurs condensées MEDIA du cockpit (débit, unité Mb/s / MB/s, carte) sont partagées avec MEDIA complet.
+- MEDIA intégré n’installe plus sa propre PWA ni son propre service worker : Bruno OnSet reste l’unique application installée.

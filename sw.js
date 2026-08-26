@@ -1,14 +1,14 @@
-const APP_VERSION='V67';
-const CACHE='bos-bruno-onset-v67';
+const APP_VERSION='V68';
+const CACHE='bos-bruno-onset-v68';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=67',
-  'app.js?v=67',
-  'manifest.webmanifest?v=67',
+  'style.css?v=68',
+  'app.js?v=68',
+  'manifest.webmanifest?v=68',
   'version.json',
   'data/cameras.json',
   'data/lights.json',
@@ -20,7 +20,12 @@ const CORE_ASSETS=[
   'dof/style.css?v=5.44-bos67',
   'dof/app.js?v=5.44-bos67',
   'dof/assets/logo-bos-header.jpg',
-  'dof/logo-bruno-guillard.png'
+  'dof/logo-bruno-guillard.png',
+  'media/index.html',
+  'media/style.css?v=2.15-bos68',
+  'media/app.js?v=2.15-bos68',
+  'media/assets/logo-bos-header.jpg',
+  'media/logo-bruno-guillard.png'
 ];
 
 async function freshResponse(url){
@@ -88,7 +93,8 @@ self.addEventListener('fetch',event=>{
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE);
       const isDofRoute=/\/dof(?:\/|$)/i.test(url.pathname);
-      const fallbackKey=isDofRoute?'dof/index.html':'index.html';
+      const isMediaRoute=/\/media(?:\/|$)/i.test(url.pathname);
+      const fallbackKey=isDofRoute ? 'dof/index.html' : (isMediaRoute ? 'media/index.html' : 'index.html');
       try{
         const fresh=await fetch(event.request,{cache:'no-store'});
         if(fresh?.ok) await cache.put(fallbackKey,fresh.clone());
