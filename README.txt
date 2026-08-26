@@ -280,3 +280,9 @@ V65 — PREMIER OUTIL COMPLET INTÉGRÉ : DOF
 - Le service worker BOS met maintenant en cache la route et les assets DOF pour l’usage hors ligne.
 - La référence du service worker du cockpit est corrigée en sw.js?v=65.
 - Lors de la migration vers V65, toutes les bulles du cockpit repartent fermées, sans perdre l’ordre/visibilité personnalisés.
+
+V66 — RETOUR BOS DANS DOF
+- Dans DOF complet, le lien « ← BOS » n’est plus en haut à droite.
+- Il est déplacé sous l’entête, à la place du CTA haut, pour être plus visible et plus logique.
+- Le thème reste à droite dans l’entête.
+- Versions / cache / service worker incrémentés en V66.
