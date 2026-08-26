@@ -1,61 +1,56 @@
-const APP_VERSION='V71';
-const CACHE='bos-bruno-onset-v71';
+const APP_VERSION='V73';
+const CACHE='bos-bruno-onset-v73';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=71',
-  'app.js?v=71',
-  'manifest.webmanifest?v=71',
+  'style.css?v=73',
+  'app.js?v=73',
+  'manifest.webmanifest?v=73',
   'version.json',
+  'README.txt',
+  'assets/logo-bos-header.jpg',
+  'assets/logo-bruno-onset.jpg',
+  'assets/mannequin-preview.png',
   'data/cameras.json',
   'data/lights.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
-  'assets/logo-bos-header.jpg',
-  'assets/mannequin-preview.png',
-  'dof/index.html',
-  'dof/style.css?v=5.44-bos67',
-  'dof/app.js?v=5.44-bos67',
-  'dof/assets/logo-bos-header.jpg',
-  'dof/logo-bruno-guillard.png',
-  'media/index.html',
-  'media/style.css?v=2.15-bos69',
-  'media/app.js?v=2.15-bos69',
-  'media/assets/logo-bos-header.jpg',
-  'media/logo-bruno-guillard.png',
-  'light/README.txt',
-  'light/README_PROJECTEURS_DB.md',
-  'light/app.js?v=0.62-bos70',
-  'light/assets/gels/lee017-spectrum.png',
-  'light/assets/gels/lee017-swatch-flat.png',
-  'light/assets/gels/lee017-swatch.png',
-  'light/assets/gels/lee117-swatch-flat.png',
-  'light/assets/gels/lee201-swatch-flat.png',
-  'light/assets/gels/lee202-swatch-flat.png',
-  'light/assets/gels/lee203-swatch-flat.png',
-  'light/assets/gels/lee204-swatch-flat.png',
-  'light/assets/gels/lee205-swatch-flat.png',
-  'light/assets/gels/lee206-swatch-flat.png',
-  'light/assets/gels/lee213-swatch-flat.png',
-  'light/assets/gels/lee245-swatch-flat.png',
-  'light/assets/gels/lee246-swatch-flat.png',
-  'light/assets/gels/lee248-swatch-flat.png',
-  'light/assets/gels/lee249-swatch-flat.png',
-  'light/assets/gels/lee506-swatch-flat.png',
-  'light/assets/gels/lee603-swatch-flat.png',
-  'light/assets/gels/lee728-swatch-flat.png',
-  'light/assets/logo-bos-header.jpg',
-  'light/assets/logo-light-app.png',
-  'light/assets/logo-light-header.png',
-  'light/bos-projecteurs-db.js',
-  'light/icon.svg',
-  'light/index.html',
-  'light/lights.json',
-  'light/manifest.webmanifest',
-  'light/styles.css?v=0.62-bos71',
+  'modules/dof/app.js?v=5.44-bos67',
+  'modules/dof/assets/logo-bos-header.jpg',
+  'modules/dof/index.html',
+  'modules/dof/logo-bruno-guillard.png',
+  'modules/dof/style.css?v=5.44-bos67',
+  'modules/light/app.js?v=0.62-bos71',
+  'modules/light/assets/gels/lee017-spectrum.png',
+  'modules/light/assets/gels/lee017-swatch-flat.png',
+  'modules/light/assets/gels/lee017-swatch.png',
+  'modules/light/assets/gels/lee117-swatch-flat.png',
+  'modules/light/assets/gels/lee201-swatch-flat.png',
+  'modules/light/assets/gels/lee202-swatch-flat.png',
+  'modules/light/assets/gels/lee203-swatch-flat.png',
+  'modules/light/assets/gels/lee204-swatch-flat.png',
+  'modules/light/assets/gels/lee205-swatch-flat.png',
+  'modules/light/assets/gels/lee206-swatch-flat.png',
+  'modules/light/assets/gels/lee213-swatch-flat.png',
+  'modules/light/assets/gels/lee245-swatch-flat.png',
+  'modules/light/assets/gels/lee246-swatch-flat.png',
+  'modules/light/assets/gels/lee248-swatch-flat.png',
+  'modules/light/assets/gels/lee249-swatch-flat.png',
+  'modules/light/assets/gels/lee506-swatch-flat.png',
+  'modules/light/assets/gels/lee603-swatch-flat.png',
+  'modules/light/assets/gels/lee728-swatch-flat.png',
+  'modules/light/assets/logo-bos-header.jpg',
+  'modules/light/bos-projecteurs-db.js',
+  'modules/light/index.html',
+  'modules/light/styles.css?v=0.62-bos73',
+  'modules/media/app.js?v=2.15-bos69',
+  'modules/media/assets/logo-bos-header.jpg',
+  'modules/media/index.html',
+  'modules/media/logo-bruno-guillard.png',
+  'modules/media/style.css?v=2.15-bos69',
 ];
 
 async function freshResponse(url){
@@ -122,10 +117,10 @@ self.addEventListener('fetch',event=>{
   if(event.request.mode==='navigate'){
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE);
-      const isDofRoute=/\/dof(?:\/|$)/i.test(url.pathname);
-      const isMediaRoute=/\/media(?:\/|$)/i.test(url.pathname);
-      const isLightRoute=/\/light(?:\/|$)/i.test(url.pathname);
-      const fallbackKey=isDofRoute ? 'dof/index.html' : (isMediaRoute ? 'media/index.html' : (isLightRoute ? 'light/index.html' : 'index.html'));
+      const isDofRoute=/\/modules\/dof(?:\/|$)/i.test(url.pathname);
+      const isMediaRoute=/\/modules\/media(?:\/|$)/i.test(url.pathname);
+      const isLightRoute=/\/modules\/light(?:\/|$)/i.test(url.pathname);
+      const fallbackKey=isDofRoute ? 'modules/dof/index.html' : (isMediaRoute ? 'modules/media/index.html' : (isLightRoute ? 'modules/light/index.html' : 'index.html'));
       try{
         const fresh=await fetch(event.request,{cache:'no-store'});
         if(fresh?.ok) await cache.put(fallbackKey,fresh.clone());

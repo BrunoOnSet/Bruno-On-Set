@@ -1,7 +1,7 @@
-const APP_VERSION = 'V71';
-const APP_BUILD = 71;
-const STORAGE_KEY = 'bos-cockpit-v71';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v70','bos-cockpit-v69','bos-cockpit-v68','bos-cockpit-v67','bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V73';
+const APP_BUILD = 73;
+const STORAGE_KEY = 'bos-cockpit-v73';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v72','bos-cockpit-v71','bos-cockpit-v70','bos-cockpit-v69','bos-cockpit-v68','bos-cockpit-v67','bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -67,7 +67,7 @@ const moduleMeta = {
   plan: ['PLAN', 'Plans de feu'],
   expo: ['EXPO', "Dynamique de l'image"]
 };
-const APP_LINKS = { frame: '#', dof: 'dof/', light: 'light/', media: 'media/', plan: '#', expo: '#' };
+const APP_LINKS = { frame: '#', dof: 'modules/dof/', light: 'modules/light/', media: 'modules/media/', plan: '#', expo: '#' };
 
 let cameras = [];
 let cameraDatabaseSource = 'none';
@@ -595,7 +595,7 @@ async function checkForBosUpdate(force=false){
 async function setupAppUpdateSystem(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('sw.js?v=71', {updateViaCache:'none'});
+    const reg = await navigator.serviceWorker.register('sw.js?v=73', {updateViaCache:'none'});
 
     if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
 

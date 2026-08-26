@@ -317,3 +317,14 @@ V71 — CLEAN STRUCTURE
 - Dans /light, suppression des reliquats d’application autonome : manifest, icon.svg, README internes, copie locale de lights.json, logo d’icône standalone.
 - /light utilise désormais la base commune centralisée ../data/lights.json comme secours local.
 - Aucun changement voulu sur l’interface ou le fonctionnement côté utilisateur.
+
+V72 — ARCHITECTURE MODULES
+- Les outils complets intégrés sont désormais rangés sous /modules/ : /modules/dof, /modules/media, /modules/light.
+- Les fichiers racine restent réservés au cockpit / PWA BOS et aux bases partagées.
+- Tous les chemins de navigation, retours BOS, fallbacks de DB et cache PWA ont été adaptés.
+- Aucun changement fonctionnel ou visuel voulu.
+
+V73 — LIGHT retour + largeur alignés
+- Retour LIGHT remis exactement aux proportions du bouton de retour DOF.
+- Largeur externe de LIGHT alignée sur MEDIA.
+- Conteneur DOF rendu strictement identique à MEDIA sur desktop pour éviter les écarts visuels.
