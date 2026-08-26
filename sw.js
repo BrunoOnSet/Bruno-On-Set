@@ -1,21 +1,26 @@
-const APP_VERSION='V64';
-const CACHE='bos-bruno-onset-v64';
+const APP_VERSION='V65';
+const CACHE='bos-bruno-onset-v65';
 const CAMERA_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const LIGHT_DB_URL='https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
 const SHARED_DB_URLS=new Set([CAMERA_DB_URL,LIGHT_DB_URL]);
 const CORE_ASSETS=[
   './',
   'index.html',
-  'style.css?v=64',
-  'app.js?v=64',
-  'manifest.webmanifest?v=64',
+  'style.css?v=65',
+  'app.js?v=65',
+  'manifest.webmanifest?v=65',
   'version.json',
   'data/cameras.json',
   'data/lights.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'assets/logo-bos-header.jpg',
-  'assets/mannequin-preview.png'
+  'assets/mannequin-preview.png',
+  'dof/index.html',
+  'dof/style.css?v=5.44-bos65',
+  'dof/app.js?v=5.44-bos65',
+  'dof/assets/logo-bos-header.jpg',
+  'dof/logo-bruno-guillard.png'
 ];
 
 async function freshResponse(url){
@@ -78,16 +83,18 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  // HTML/navigation: network first. This is the key change versus the previous cache-first SW.
+  // HTML/navigation: network first, avec fallback propre à chaque route interne BOS.
   if(event.request.mode==='navigate'){
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE);
+      const isDofRoute=/\/dof(?:\/|$)/i.test(url.pathname);
+      const fallbackKey=isDofRoute?'dof/index.html':'index.html';
       try{
         const fresh=await fetch(event.request,{cache:'no-store'});
-        if(fresh?.ok) await cache.put('index.html',fresh.clone());
+        if(fresh?.ok) await cache.put(fallbackKey,fresh.clone());
         return fresh;
       }catch{
-        return (await cache.match('index.html')) || (await cache.match('./'));
+        return (await cache.match(fallbackKey)) || (await cache.match('index.html')) || (await cache.match('./'));
       }
     })());
     return;

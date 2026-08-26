@@ -891,3 +891,54 @@ header.bos-header{
 :root[data-theme="dark"] .feedback-contact-link:focus-visible{
   color:#7FA7B0;
 }
+
+
+/* V65 — premier module complet intégré : DOF */
+.module-head-row{
+  display:flex;
+  align-items:stretch;
+  width:100%;
+}
+.module-head-row .module-head{
+  flex:1 1 auto;
+  width:auto;
+  min-width:0;
+}
+.module-full-link{
+  flex:0 0 auto;
+  align-self:stretch;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  max-width:155px;
+  padding:0 14px 0 8px;
+  border:0;
+  border-left:1px solid var(--line);
+  background:transparent;
+  color:var(--blue);
+  font-family:"Montserrat",Arial,sans-serif;
+  font-size:8px;
+  line-height:1.25;
+  font-weight:700;
+  letter-spacing:.055em;
+  text-align:right;
+  cursor:pointer;
+}
+.module-full-link span{
+  display:inline-block;
+  transition:transform .16s ease;
+}
+.module-full-link:hover span{transform:translateX(3px)}
+.module-full-link:focus-visible{
+  outline:2px solid var(--blue);
+  outline-offset:-4px;
+}
+@media(max-width:520px){
+  .module-full-link{
+    max-width:118px;
+    padding-right:10px;
+    font-size:7px;
+    letter-spacing:.035em;
+  }
+}

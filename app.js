@@ -1,7 +1,7 @@
-const APP_VERSION = 'V64';
-const APP_BUILD = 64;
-const STORAGE_KEY = 'bos-cockpit-v64';
-const LEGACY_STORAGE_KEYS = ['bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
+const APP_VERSION = 'V65';
+const APP_BUILD = 65;
+const STORAGE_KEY = 'bos-cockpit-v65';
+const LEGACY_STORAGE_KEYS = ['bos-cockpit-v64','bos-cockpit-v45','bos-cockpit-v44','bos-cockpit-v43','bos-cockpit-v42','bos-cockpit-v41','bos-cockpit-v40','bos-cockpit-v39','bos-cockpit-v38','bos-cockpit-v37','bos-cockpit-v36','bos-cockpit-v35','bos-cockpit-v34','bos-cockpit-v33','bos-cockpit-v32','bos-cockpit-v31','bos-cockpit-v30','bos-cockpit-v29','bos-cockpit-v27','bos-cockpit-v26','bos-cockpit-v25','bos-cockpit-v24','bos-cockpit-v23','bos-cockpit-v22','bos-cockpit-v21','bos-cockpit-v20','bos-cockpit-v19','bos-cockpit-v18','bos-cockpit-v17','bos-cockpit-v16','bos-cockpit-v15','bos-cockpit-v14','bos-cockpit-v13','bos-cockpit-v12','bos-cockpit-v11','bos-cockpit-v10'];
 const CAMERA_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-CAMERA-DB/main/cameras.json';
 const CAMERA_DB_FALLBACK_URL = 'data/cameras.json';
 const LIGHT_DB_URL = 'https://raw.githubusercontent.com/BrunoOnSet/BOS-PROJECTEURS-DB/main/lights.json';
@@ -23,6 +23,9 @@ FRAME_FIGURE.bodyRatio=FRAME_FIGURE.footRatio-FRAME_FIGURE.headTopRatio;
 const PLAN_LIBRARY_KEY = 'bos-plan-feu-library-v06';
 const PLAN_CURRENT_KEY = 'bos-plan-feu-v06-current';
 const ONSET_PLAN_IMPORT_KEY = 'bos-onset-plan-imports-v01';
+const BOS_SHARED_STATE_KEY = 'bos-shared-state-v1';
+const BOS_RETURN_SCROLL_KEY = 'bos-cockpit-return-scroll-v1';
+
 
 const apertures = ['1.0','1.2','1.4','1.8','2.0','2.8','4','5.6','8','11','16','22'];
 const isos = ['100','125','160','200','250','320','400','500','640','800','1000','1250','1600','2000','2500','3200','4000','5000','6400','8000','10000','12800','16000','20000','25600','32000','40000','51200'];
@@ -64,7 +67,7 @@ const moduleMeta = {
   plan: ['PLAN', 'Plans de feu'],
   expo: ['EXPO', "Dynamique de l'image"]
 };
-const APP_LINKS = { frame: '#', dof: '#', light: '#', media: '#', plan: '#', expo: '#' };
+const APP_LINKS = { frame: '#', dof: 'dof/', light: '#', media: '#', plan: '#', expo: '#' };
 
 let cameras = [];
 let cameraDatabaseSource = 'none';
@@ -73,6 +76,43 @@ let lightFixtures = [];
 let lightDatabaseSource = 'none';
 let lightPickerBrand = '';
 let lightPickerFamily = '';
+
+function readBosSharedState(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(BOS_SHARED_STATE_KEY)||'null');
+    return raw && typeof raw==='object' ? raw : null;
+  }catch(_){ return null; }
+}
+function mergeBosSharedInto(target){
+  const shared=readBosSharedState();
+  if(!shared) return target;
+  if(shared.cameraId) target.cameraId=shared.cameraId;
+  if(Number.isFinite(Number(shared.focal))) target.focal=Number(shared.focal);
+  if(Number.isFinite(Number(shared.aperture))) target.aperture=Number(shared.aperture);
+  if(Number.isFinite(Number(shared.distanceCm))) target.distanceCm=Number(shared.distanceCm);
+  if(shared.theme==='light' || shared.theme==='dark') target.theme=shared.theme;
+  return target;
+}
+function writeBosSharedState(source='cockpit'){
+  try{
+    const previous=readBosSharedState()||{};
+    const payload={
+      ...previous,
+      cameraId:state.cameraId,
+      focal:Number(state.focal),
+      aperture:Number(state.aperture),
+      distanceCm:Number(state.distanceCm),
+      theme:state.theme,
+      cameraGamma:state.cameraGamma,
+      cameraIso:state.cameraIso,
+      cameraShutter:state.cameraShutter,
+      updatedAt:Date.now(),
+      source
+    };
+    localStorage.setItem(BOS_SHARED_STATE_KEY,JSON.stringify(payload));
+  }catch(_){}
+}
+
 let state = loadState();
 normalizeState();
 
@@ -88,13 +128,21 @@ function mergeDeep(base, extra){
 function loadState(){
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
+    let migrated=false;
     if(!raw){
       for(const key of LEGACY_STORAGE_KEYS){
         raw = localStorage.getItem(key);
-        if(raw) break;
+        if(raw){ migrated=true; break; }
       }
     }
-    return mergeDeep(defaultState, JSON.parse(raw || '{}'));
+    let loaded=mergeDeep(defaultState, JSON.parse(raw || '{}'));
+    loaded=mergeBosSharedInto(loaded);
+    // V65 : une première ouverture / migration repart visuellement avec toutes les bulles fermées.
+    if(migrated){
+      loaded.open=clone(defaultState.open);
+      loaded.cameraOpen=false;
+    }
+    return loaded;
   }
   catch { return clone(defaultState); }
 }
@@ -137,7 +185,10 @@ function normalizeState(){
     if(state.open[id] === undefined) state.open[id] = defaultState.open[id];
   }
 }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  writeBosSharedState('cockpit');
+}
 function esc(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function currentCamera(){ return cameras.find(c => c.id === state.cameraId) || cameras[0]; }
 function fmtM(m){ if(!isFinite(m)) return '∞'; if(m < 1) return `${Math.round(m*100)} cm`; if(m < 10) return `${m.toFixed(2).replace('.',',')} m`; return `${m.toFixed(1).replace('.',',')} m`; }
@@ -526,7 +577,7 @@ async function checkForBosUpdate(force=false){
 async function setupAppUpdateSystem(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('sw.js?v=46', {updateViaCache:'none'});
+    const reg = await navigator.serviceWorker.register('sw.js?v=65', {updateViaCache:'none'});
 
     if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
 
@@ -642,6 +693,36 @@ function setupBosInstallExperience(){
   }
 }
 
+
+function syncCockpitFromSharedState(){
+  const before=JSON.stringify({
+    cameraId:state.cameraId,focal:state.focal,aperture:state.aperture,
+    distanceCm:state.distanceCm,theme:state.theme
+  });
+  mergeBosSharedInto(state);
+  normalizeState();
+  const after=JSON.stringify({
+    cameraId:state.cameraId,focal:state.focal,aperture:state.aperture,
+    distanceCm:state.distanceCm,theme:state.theme
+  });
+  if(before===after) return false;
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(_){}
+  return true;
+}
+function restoreBosCockpitPosition(){
+  let y=null;
+  try{
+    if(sessionStorage.getItem('bos-cockpit-returning')==='1'){
+      y=Number(sessionStorage.getItem(BOS_RETURN_SCROLL_KEY));
+      sessionStorage.removeItem('bos-cockpit-returning');
+      sessionStorage.removeItem(BOS_RETURN_SCROLL_KEY);
+    }
+  }catch(_){}
+  if(Number.isFinite(y)){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:'instant'})));
+  }
+}
+
 async function init(){
   const [cameraResult,lightResult] = await Promise.allSettled([loadSharedCameraDatabase(),loadSharedLightDatabase()]);
   if(cameraResult.status==='fulfilled' && cameraResult.value) cameras = cameraResult.value.cameras || [];
@@ -659,8 +740,10 @@ async function init(){
   clampIsoToRange();
   clampCameraIsoToRange();
   setupTheme(); renderCameraSelect(); renderTopFocal(); renderGlobalCameraControls(); renderModules(); bindGlobal(); renderCustomize();
+  writeBosSharedState('cockpit');
   setupBosInstallExperience();
   setupAppUpdateSystem();
+  restoreBosCockpitPosition();
 }
 function setupTheme(){ document.documentElement.dataset.theme=state.theme; document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#0B0C0E':'#F3F1EC'; const btn=document.getElementById('themeBtn'); if(btn) btn.textContent=state.theme==='dark'?'LIGHT':'DARK'; }
 function cameraBrand(c){ return String(c?.brand || c?.group || 'Autre').trim() || 'Autre'; }
@@ -1001,11 +1084,26 @@ function bindGlobal(){
   bindFreeValueEditing();
 }
 function renderModules(){ const root=document.getElementById('modules'); root.innerHTML=state.layout.filter(id=>state.visible[id]).map(renderModule).join(''); bindModules(); updateLive(); syncGlobalLimitState(); }
-function renderModule(id){ const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub; return `<article class="module ${state.open[id]?'open':''}" data-module="${id}"><button class="module-head" data-toggle="${id}"><span class="module-title"><i class="module-dot"></i><span><strong>${title}</strong><small>${esc(sub)}</small></span></span><span class="chev">⌄</span></button><div class="module-body">${renderBody(id)}</div></article>`; }
+function renderModule(id){
+  const [title,baseSub]=moduleMeta[id],sub=id==='plan'?planModuleSubtitle():baseSub;
+  const fullTool=id==='dof'
+    ? `<button type="button" class="module-full-link" data-applink="dof">OUVRIR L’OUTIL COMPLET <span aria-hidden="true">→</span></button>`
+    : '';
+  return `<article class="module ${state.open[id]?'open':''}" data-module="${id}">
+    <div class="module-head-row">
+      <button class="module-head" data-toggle="${id}">
+        <span class="module-title"><i class="module-dot"></i><span><strong>${title}</strong><small>${esc(sub)}</small></span></span>
+        <span class="chev">⌄</span>
+      </button>
+      ${fullTool}
+    </div>
+    <div class="module-body">${renderBody(id)}</div>
+  </article>`;
+}
 
 function renderBody(id){
   if(id==='plan') return renderPlanBody();
-  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="dofFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${nearestApertureIndex(state.aperture)}"><strong id="dofApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${apertureReadoutText(state.aperture)}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="dofDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div></div>${appLink(id)}`;
+  if(id==='dof') return `<div class="resultbox dof-only"><div class="result-main" id="dofMain">—</div><div class="result-sub" id="dofSub">—</div></div><div class="bos-linked-controls"><div class="bos-linked-slider"><span>FOCALE</span><input id="dofFocalSlider" type="range" min="9" max="200" step="1" value="${Math.max(9,Math.min(200,Number(state.focal)||35))}"><strong id="dofFocalReadout" class="free-value-readout" data-free-control="focal" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${focalReadoutText(state.focal)}</strong></div><div class="bos-linked-slider"><span>DIAPH</span><input id="dofApertureSlider" type="range" min="0" max="${apertures.length-1}" step="1" value="${nearestApertureIndex(state.aperture)}"><strong id="dofApertureReadout" class="free-value-readout" data-free-control="aperture" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${apertureReadoutText(state.aperture)}</strong></div><div class="bos-linked-slider"><span>RECUL</span><input id="dofDistanceSlider" type="range" min="0.30" max="15" step="0.10" value="${Math.max(.3,state.distanceCm/100)}"><strong id="dofDistanceReadout" class="free-value-readout" data-free-control="distance" role="button" tabindex="0" title="Cliquer pour saisir une valeur libre">${distanceReadoutText(state.distanceCm/100)}</strong></div></div>`;
 
   if(id==='media') return `<div class="grid2 media-grid"><label><span>Débit</span><div class="unit-input"><input id="mediaBitrate" type="number" inputmode="decimal" min="1" step="1" value="${state.media.bitrate}"><b id="mediaBitrateUnit">${state.media.unit}</b></div><div class="segmented compact"><button type="button" class="seg ${state.media.unit==='Mb/s'?'active':''}" data-mediaunit="Mb/s">Mb/s</button><button type="button" class="seg ${state.media.unit==='MB/s'?'active':''}" data-mediaunit="MB/s">MB/s</button></div></label><label><span>Carte</span><select id="mediaCard">${['64','128','256','512','1000','2000','4000'].map(v=>`<option value="${v}" ${String(state.media.card)===String(v)?'selected':''}>${v} Go</option>`).join('')}</select></label></div><div class="resultbox"><div class="result-main" id="mediaMain">—</div><div class="result-sub" id="mediaSub">temps d’enregistrement · réserve 0 %</div></div>${appLink(id)}`;
 
@@ -1482,7 +1580,16 @@ function bindModules(){
   const expoResetBtn=document.getElementById('expoResetBtn'); if(expoResetBtn) expoResetBtn.addEventListener('click',resetExpoToCameraBase);
   document.querySelectorAll('[data-expolock]').forEach(b=>b.addEventListener('click',()=>toggleExpoLock(b.dataset.expolock)));
   document.querySelectorAll('[data-expokey]').forEach(s=>s.addEventListener('change',e=>expoChanged(e.target.dataset.expokey,e.target.value)));
-  document.querySelectorAll('[data-applink]').forEach(b=>b.addEventListener('click',()=>{const u=APP_LINKS[b.dataset.applink];if(u&&u!=='#')location.href=u;}));
+  document.querySelectorAll('[data-applink]').forEach(b=>b.addEventListener('click',()=>{
+    const u=APP_LINKS[b.dataset.applink];
+    if(!u||u==='#')return;
+    try{
+      sessionStorage.setItem(BOS_RETURN_SCROLL_KEY,String(window.scrollY||0));
+      sessionStorage.setItem('bos-cockpit-returning','1');
+    }catch(_){}
+    writeBosSharedState('cockpit');
+    location.href=u;
+  }));
 }
 function switchMediaUnit(nextUnit){ if(nextUnit===state.media.unit)return; const oldMb=bitrateToMbPerSec(); state.media.unit=nextUnit; state.media.bitrate=nextUnit==='Mb/s'?Math.round(oldMb):Math.round((oldMb/8)*100)/100; save(); renderModules(); }
 
@@ -1787,3 +1894,15 @@ function renderCustomize(){ const root=document.getElementById('customizeList');
 function moveModule(id,dir){ const i=state.layout.indexOf(id),j=i+dir;if(j<0||j>=state.layout.length)return;[state.layout[i],state.layout[j]]=[state.layout[j],state.layout[i]];save();renderCustomize();renderModules(); }
 
 document.addEventListener('DOMContentLoaded',init);
+
+
+window.addEventListener('pageshow',()=>{
+  if(syncCockpitFromSharedState()){
+    setupTheme();
+    renderCameraSelect();
+    renderTopFocal();
+    renderGlobalCameraControls();
+    renderModules();
+    renderCustomize();
+  }
+});

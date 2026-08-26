@@ -268,3 +268,15 @@ V64 — RESET + FEEDBACK + HAUT RESSERRÉ
 - Ajout tout en bas de « Une idée pour améliorer l’application ? → ».
 - Ce lien ouvre directement l’e-mail vers brunoguillardcontact@gmail.com avec l’objet « Suggestion — Bruno OnSet ».
 - Version / cache / service worker incrémentés en V64.
+
+V65 — PREMIER OUTIL COMPLET INTÉGRÉ : DOF
+- DOF V5.44 est intégré dans la même PWA BOS sous /dof/.
+- Dans la bulle DOF du cockpit, « OUVRIR L’OUTIL COMPLET → » apparaît directement dans l’en-tête de la bulle.
+- Dans DOF complet, « ← BOS » ramène au cockpit en retrouvant la position précédente.
+- Caméra principale, focale principale, diaphragme, distance Sujet 1 et thème sont partagés entre cockpit et DOF.
+- Les réglages propres à DOF (ITW, Sujet 2, modes de MAP, etc.) restent locaux à DOF.
+- DOF intégré n’installe plus sa propre PWA ni son propre service worker : Bruno OnSet reste l’unique application installée.
+- DOF utilise la BOS_CAMERA_DB commune distante, avec le fallback local de Bruno OnSet.
+- Le service worker BOS met maintenant en cache la route et les assets DOF pour l’usage hors ligne.
+- La référence du service worker du cockpit est corrigée en sw.js?v=65.
+- Lors de la migration vers V65, toutes les bulles du cockpit repartent fermées, sans perdre l’ordre/visibilité personnalisés.
